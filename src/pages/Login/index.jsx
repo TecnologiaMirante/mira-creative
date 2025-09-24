@@ -2,7 +2,6 @@ import { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { LoginButton } from "../../components/LoginButton";
 import UserContext from "../../context/UserContext";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,

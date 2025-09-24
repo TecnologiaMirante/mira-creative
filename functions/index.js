@@ -10,7 +10,7 @@ initializeApp();
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
-exports.askDaqui = onCall(
+exports.askDaqui = onCall( 
   {
     secrets: [GEMINI_API_KEY],
     region: "southamerica-east1",

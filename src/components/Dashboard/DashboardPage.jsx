@@ -15,6 +15,8 @@ import { StatsGrid } from "./StatsGrid";
 import { FilterBar } from "./FilterBar";
 import { ScriptList } from "./ScriptList";
 
+import { toast } from "sonner";
+
 export function DashboardPage({ onEditScript, onViewScript }) {
   const [scripts, setScripts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,8 +121,17 @@ export function DashboardPage({ onEditScript, onViewScript }) {
   );
 
   const handleDeleteScript = async (scriptId) => {
-    if (confirm("Tem certeza que deseja excluir este roteiro?")) {
+    try {
       await deleteDoc(doc(db, "pautas", scriptId));
+      toast.error("Roteiro excluído com sucesso!", {
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Erro ao excluir o roteiro: ", error);
+      toast.error("Falha ao excluir o roteiro.", {
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        duration: 3000,
+      });
     }
   };
 

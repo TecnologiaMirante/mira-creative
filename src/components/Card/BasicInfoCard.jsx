@@ -29,7 +29,6 @@ export function BasicInfoCard({
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Prop 'isReadOnly' em todos os campos para travá-los no modo de visualização */}
-
           {/* PAUTA  */}
           <div className="space-y-2">
             <Label htmlFor="pauta">Pauta</Label>
@@ -43,7 +42,6 @@ export function BasicInfoCard({
               readOnly={isReadOnly}
             />
           </div>
-
           {/* STATUS */}
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
@@ -58,7 +56,6 @@ export function BasicInfoCard({
               required
             />
           </div>
-
           {/* PRODUTOR */}
           <div className="space-y-2">
             <Label htmlFor="produtor">Produtor</Label>
@@ -71,7 +68,6 @@ export function BasicInfoCard({
               readOnly={isReadOnly}
             />
           </div>
-
           {/* APRESENTADOR(A) */}
           <div className="space-y-2">
             <Label htmlFor="apresentador">Apresentador(a)</Label>
@@ -84,7 +80,6 @@ export function BasicInfoCard({
               readOnly={isReadOnly}
             />
           </div>
-
           {/* CIDADE */}
           <div className="space-y-2">
             <Label htmlFor="cidade">Cidade</Label>
@@ -109,7 +104,6 @@ export function BasicInfoCard({
               required
             />
           </div>
-
           {/* BAIRRO */}
           <div className="space-y-2">
             <div className="flex flex-row gap-2 items-center">
@@ -138,7 +132,6 @@ export function BasicInfoCard({
               disabled={formData.cidade === "MARANHÃO"}
             />
           </div>
-
           {/* DATA DE GRAVAÇÃO */}
           <div className="space-y-2">
             <Label htmlFor="dataGravacao">Data da gravação</Label>
@@ -150,7 +143,6 @@ export function BasicInfoCard({
               readOnly={isReadOnly}
             />
           </div>
-
           {/* DATA DE EXIBIÇÃO */}
           <div className="space-y-2">
             <Label htmlFor="dataExibicao">Data de exibição</Label>
@@ -162,7 +154,6 @@ export function BasicInfoCard({
               readOnly={isReadOnly}
             />
           </div>
-
           {/* Exibe o erro de data se ele existir */}
           {dateError && (
             <div className="md:col-span-2 text-red-600 text-sm -mt-2">

@@ -5,6 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // Funções auxiliares de estilização (específicas para este card)
 const getStatusColor = (status) => {
@@ -155,18 +166,39 @@ export function ScriptCard({ script, onView, onEdit, onDelete }) {
             <Edit className="h-3 w-3" />
             Editar
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="hover:bg-destructive hover:text-destructive-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
 
-              onDelete(script.id);
-            }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2 hover:bg-destructive/50 hover:text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <Trash2 className="h-3 w-3" /> Excluir
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                  este roteiro dos nossos servidores.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(script.id)}
+                  className="bg-destructive text-white font-bold hover:bg-destructive/90"
+                >
+                  Continuar e Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </Card>

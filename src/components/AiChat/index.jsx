@@ -164,6 +164,7 @@ export function AiChat() {
       return part;
     });
   };
+
   return (
     <div className="p-8 h-full flex flex-col">
       <div className="mb-8">

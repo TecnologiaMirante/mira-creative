@@ -29,6 +29,8 @@ const initialState = {
   scriptRows: [],
 };
 
+import { toast } from "sonner";
+
 export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
   const [formData, setFormData] = useState(initialState);
   const [scriptRows, setScriptRows] = useState([
@@ -112,9 +114,21 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
         });
       }
 
+      toast.success(
+        `Roteiro ${mode === "edit" ? "editado" : "salvo"} com sucesso!`,
+        {
+          duration: 3000,
+        }
+      );
+
       onSave?.();
     } catch (error) {
       console.error("Erro ao salvar roteiro:", error);
+
+      toast.error("Falha ao salvar o roteiro.", {
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +169,14 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
         }; // cinza
     }
   };
+
+  function convertDate(date) {
+    const displaydate = date
+      ? new Date(date).toLocaleDateString("pt-BR")
+      : "N/A";
+
+    return displaydate;
+  }
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
@@ -234,8 +256,8 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
             ["APRESENTADOR", formData.apresentador || "N/A"],
             ["CIDADE", formData.cidade || "N/A"],
             ["BAIRRO", formData.bairro || "N/A"],
-            ["DATA DA GRAVAÇÃO", formData.dataGravacao || "N/A"],
-            ["DATA DE EXIBIÇÃO", formData.dataExibicao || "N/A"],
+            ["DATA DA GRAVAÇÃO", convertDate(formData.dataGravacao) || "N/A"],
+            ["DATA DE EXIBIÇÃO", convertDate(formData.dataExibicao) || "N/A"],
           ],
           theme: "grid",
           styles: {
@@ -289,6 +311,10 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           },
         });
 
+        toast.success("Roteiro exportado com sucesso!", {
+          duration: 3000,
+        });
+
         // --- SALVAR ---
         const fileName = `roteiro_${(formData.pauta || "sem_titulo")
           .replace(/\s+/g, "_")
@@ -297,6 +323,10 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
       };
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
+      toast.error("Falha ao exportar roteiro.", {
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        duration: 3000,
+      });
     }
   };
 
