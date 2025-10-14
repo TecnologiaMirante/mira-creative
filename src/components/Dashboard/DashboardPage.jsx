@@ -22,6 +22,7 @@ export function DashboardPage({ onEditScript, onViewScript }) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
+    programa: "all",
     status: "all",
     produtor: "all",
     apresentador: "all",
@@ -87,6 +88,8 @@ export function DashboardPage({ onEditScript, onViewScript }) {
         script.pauta?.toLowerCase().includes(searchLower) ||
         script.apresentador?.toLowerCase().includes(searchLower);
 
+      const programaMatch =
+        filters.programa === "all" || script.programa === filters.programa;
       const statusMatch =
         filters.status === "all" || script.status === filters.status;
       const produtorMatch =
@@ -101,6 +104,7 @@ export function DashboardPage({ onEditScript, onViewScript }) {
 
       return (
         searchMatch &&
+        programaMatch &&
         statusMatch &&
         produtorMatch &&
         apresentadorMatch &&
@@ -113,8 +117,8 @@ export function DashboardPage({ onEditScript, onViewScript }) {
   const stats = useMemo(
     () => ({
       total: scripts.length,
-      emProducao: scripts.filter((s) => s.status === "Em Produção").length,
       aprovados: scripts.filter((s) => s.status === "Aprovado").length,
+      emProducao: scripts.filter((s) => s.status === "Em Produção").length,
       exibidos: scripts.filter((s) => s.status === "Exibido").length,
     }),
     [scripts]
@@ -167,6 +171,7 @@ export function DashboardPage({ onEditScript, onViewScript }) {
         isLoading={isLoading}
         hasActiveFilter={
           searchQuery !== "" ||
+          filters.programa !== "all" ||
           filters.status !== "all" ||
           filters.produtor !== "all" ||
           filters.apresentador !== "all"

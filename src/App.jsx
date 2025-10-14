@@ -12,7 +12,6 @@ export function App() {
     <BrowserRouter>
       <UserProvider>
         <Toaster richColors position="top-right" />
-
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />

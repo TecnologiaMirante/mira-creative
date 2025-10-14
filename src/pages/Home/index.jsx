@@ -1,16 +1,15 @@
-// /pages/Home/index.jsx
-"use client";
-
 import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AiChat } from "@/components/AiChat";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { ScriptForm } from "@/components/Card/ScriptForm";
+import { CronogramaPage } from "@/components/CronogramaPage"; // 1. Importar a nova página
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { useEffect, useState } from "react";
 
+// Componentes de carregamento (ScriptViewLoader, ScriptEditLoader) permanecem os mesmos...
 function ScriptViewLoader() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,7 +41,6 @@ function ScriptViewLoader() {
   );
 }
 
-// Este componente lida com a lógica de carregar um roteiro para EDIÇÃO
 function ScriptEditLoader() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -75,11 +73,10 @@ function ScriptEditLoader() {
   );
 }
 
-// --- Componente Principal da Página Home ---
-export function Home() {
+// --- Componente de Conteúdo Principal ---
+function MainContent() {
   const navigate = useNavigate();
 
-  // As funções de handle agora simplesmente navegam para a URL correta
   const handleViewScript = (scriptData) => {
     navigate(`/home/script/view/${scriptData.id}`);
   };
@@ -89,46 +86,54 @@ export function Home() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        <main className="flex-1 bg-gray-50 overflow-y-auto">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <DashboardPage
-                  onViewScript={handleViewScript}
-                  onEditScript={handleEditScript}
-                />
-              }
+    <main className="flex-1 bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out">
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <DashboardPage
+              onViewScript={handleViewScript}
+              onEditScript={handleEditScript}
             />
-            <Route
-              path="/dashboard"
-              element={
-                <DashboardPage
-                  onViewScript={handleViewScript}
-                  onEditScript={handleEditScript}
-                />
-              }
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage
+              onViewScript={handleViewScript}
+              onEditScript={handleEditScript}
             />
-            <Route
-              path="/create-script"
-              element={
-                <ScriptForm
-                  mode="create"
-                  onCancel={() => navigate("/home/dashboard")}
-                  onSave={() => navigate("/home/dashboard")}
-                />
-              }
+          }
+        />
+        <Route
+          path="/create-script"
+          element={
+            <ScriptForm
+              mode="create"
+              onCancel={() => navigate("/home/dashboard")}
+              onSave={() => navigate("/home/dashboard")}
             />
-            <Route path="/ai-chat" element={<AiChat />} />
+          }
+        />
+        <Route path="/ai-chat" element={<AiChat />} />
+        <Route path="/script/view/:id" element={<ScriptViewLoader />} />
+        <Route path="/script/edit/:id" element={<ScriptEditLoader />} />
 
-            {/* Novas rotas para visualizar e editar */}
-            <Route path="/script/view/:id" element={<ScriptViewLoader />} />
-            <Route path="/script/edit/:id" element={<ScriptEditLoader />} />
-          </Routes>
-        </main>
+        {/* 2. Adicionar a nova rota para o cronograma */}
+        <Route path="/schedule" element={<CronogramaPage />} />
+      </Routes>
+    </main>
+  );
+}
+
+// --- Componente Principal da Página Home ---
+export function Home() {
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-gray-50">
+        <AppSidebar />
+        <MainContent />
       </div>
     </SidebarProvider>
   );

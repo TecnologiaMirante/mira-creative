@@ -1,6 +1,5 @@
-// /components/AppSidebar/index.jsx
-
 import {
+  ChevronLeft,
   Home as HomeIcon,
   FileText,
   MessageCircle,
@@ -13,12 +12,12 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,12 +45,34 @@ const toolsMenuItems = [
   { title: "Relatórios", icon: BarChart3, id: "reports", badge: null },
 ];
 
+const SidebarToggle = () => {
+  const { state, toggleSidebar } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute -right-4 top-1/2 -translate-y-1/2 bg-background hover:bg-accent border rounded-full h-8 w-8 hidden lg:flex"
+      onClick={toggleSidebar}
+    >
+      <ChevronLeft
+        className={`h-4 w-4 transition-transform duration-700 ${
+          isCollapsed ? "rotate-180" : ""
+        }`}
+      />
+    </Button>
+  );
+};
+
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout: contextLogout } = useContext(UserContext);
-
   const [modalIsOpen, setModalIsOpen] = useState(false);
+
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   function openModal() {
     setModalIsOpen(true);
@@ -74,109 +95,138 @@ export function AppSidebar() {
       maxHeight: "90vh",
       borderRadius: "0.5rem",
       padding: "1rem",
-      overflow: "auto",
     },
   };
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <FileText className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-sans font-bold text-sidebar-foreground">
-              Mira Creative
-            </h1>
-            <p className="text-sm text-muted-foreground">Gestão de Pautas</p>
-          </div>
+    <Sidebar collapsible="icon">
+      <SidebarToggle />
+
+      {/* Sidebar header*/}
+      <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center gap-3">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+          <FileText className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <div
+          className={`overflow-hidden transition-opacity duration-200 ${
+            isCollapsed ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <h1 className="text-xl font-sans font-bold text-sidebar-foreground whitespace-nowrap">
+            Mira Creative
+          </h1>
+          <p className="text-sm text-muted-foreground whitespace-nowrap">
+            Gestão de Pautas
+          </p>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+      {/* Sidebar content*/}
+      <SidebarContent className="px-2 py-4">
+        {!isCollapsed && (
+          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
             Principal
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <Link
-                    to={`/home/${item.id}`}
-                    className={`flex items-center w-full justify-start gap-2 px-4 py-3 text-left rounded-lg transition-all duration-200 ${
-                      location.pathname.endsWith(item.id) ||
-                      (location.pathname === "/home" && item.id === "dashboard")
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="font-medium">{item.title}</span>
-                    {item.badge && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        )}
 
+        {/* Sidebar Menu PRINCIPAL*/}
+        <SidebarMenu>
+          {mainMenuItems.map((item) => (
+            <SidebarMenuItem key={item.id}>
+              <Link
+                to={`/home/${item.id}`}
+                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
+                  isCollapsed ? "justify-center" : "justify-start"
+                } ${
+                  location.pathname.endsWith(item.id) ||
+                  (location.pathname === "/home" && item.id === "dashboard")
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span
+                  className={
+                    isCollapsed ? "sr-only" : "font-medium whitespace-nowrap"
+                  }
+                >
+                  {item.title}
+                </span>
+                {!isCollapsed && item.badge && (
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Link>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+
+        {/* Sidebar Menu FERRAMENTAS*/}
         <SidebarGroup className="mt-6">
-          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Ferramentas
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {toolsMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <Link
-                    to={`/home/${item.id}`}
-                    className={`flex items-center w-full justify-start gap-2 px-4 py-3 text-left rounded-lg transition-all duration-200 ${
-                      location.pathname.endsWith(item.id)
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    }`}
+          {!isCollapsed && (
+            <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+              Ferramentas
+            </SidebarGroupLabel>
+          )}
+          <SidebarMenu>
+            {toolsMenuItems.map((item) => (
+              <SidebarMenuItem key={item.id}>
+                <Link
+                  to={`/home/${item.id}`}
+                  className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
+                    isCollapsed ? "justify-center" : "justify-start"
+                  } ${
+                    location.pathname.endsWith(item.id)
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span
+                    className={
+                      isCollapsed ? "sr-only" : "font-medium whitespace-nowrap"
+                    }
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span className="font-medium">{item.title}</span>
-                    {item.badge && (
-                      <Badge variant="outline" className="ml-auto text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+                    {item.title}
+                  </span>
+                  {!isCollapsed && item.badge && (
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <img
-              src={user.photoURL}
-              alt="Foto de perfil do usuário"
-              className="rounded-full"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
+      <SidebarFooter className="border-t border-sidebar-border">
+        <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent">
+          <img
+            src={user.photoURL}
+            alt="Foto de perfil"
+            className="w-8 h-8 rounded-full flex-shrink-0"
+          />
+          <div
+            className={`flex-1 min-w-0 overflow-hidden transition-opacity duration-700 ${
+              isCollapsed ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <p className="text-sm font-medium text-sidebar-foreground truncate whitespace-nowrap">
               {user.display_name}
             </p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground truncate whitespace-nowrap">
+              {user.email}
+            </p>
           </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={openModal}
-            className="h-8 w-8 p-0 cursor-pointer"
+            className={`h-8 w-8 p-0 cursor-pointer flex-shrink-0 ${
+              isCollapsed ? "opacity-0" : "opacity-100"
+            }`}
           >
             <LogOut className="h-4 w-4" />
           </Button>

@@ -1,5 +1,4 @@
-// /components/roteiros/ScriptForm.js
-"use client";
+// /src/components/Card/ScriptForm/index.jsx
 
 import { useState, useEffect } from "react";
 import { db } from "../../../firebase";
@@ -16,8 +15,10 @@ import { BasicInfoCard } from "./BasicInfoCard";
 import { DetailedScriptCard } from "./DetailedScriptCard ";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 const initialState = {
+  program: "Daqui",
   produtor: "",
   cidade: "",
   bairro: "",
@@ -27,9 +28,9 @@ const initialState = {
   dataExibicao: "",
   status: "",
   scriptRows: [],
+  motivoCancelamento: "",
+  dataCancelamento: "",
 };
-
-import { toast } from "sonner";
 
 export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
   const [formData, setFormData] = useState(initialState);
@@ -42,11 +43,11 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
 
   useEffect(() => {
     if ((mode === "edit" || mode === "view") && initialData) {
-      setFormData(initialData);
+      setFormData({ ...initialState, ...initialData });
       setScriptRows(
-        initialData.scriptRows || [
-          { id: Date.now().toString(), video: "", texto: "" },
-        ]
+        initialData.scriptRows?.length > 0
+          ? initialData.scriptRows
+          : [{ id: Date.now().toString(), video: "", texto: "" }]
       );
     } else {
       setFormData(initialState);
@@ -70,8 +71,16 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
       .catch((err) => console.error("Erro ao carregar cidades:", err));
   }, []);
 
-  const handleInputChange = (field, value) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => {
+      const newState = { ...prev, [field]: value };
+      if (field === "status" && value !== "Cancelado") {
+        newState.motivoCancelamento = "";
+        newState.dataCancelamento = "";
+      }
+      return newState;
+    });
+  };
 
   const addScriptRow = () =>
     setScriptRows([
@@ -92,16 +101,20 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setIsLoading(true);
 
     const dataToSave = {
       ...formData,
-
       scriptRows: scriptRows.filter(
         (row) => row.video.trim() || row.texto.trim()
       ),
     };
+
+    // Garante que os campos de cancelamento só sejam salvos se o status for "Cancelado"
+    if (dataToSave.status !== "Cancelado") {
+      dataToSave.motivoCancelamento = "";
+      dataToSave.dataCancelamento = "";
+    }
 
     try {
       if (mode === "edit") {
@@ -113,18 +126,13 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           createdAt: serverTimestamp(),
         });
       }
-
       toast.success(
         `Roteiro ${mode === "edit" ? "editado" : "salvo"} com sucesso!`,
-        {
-          duration: 3000,
-        }
+        { duration: 3000 }
       );
-
       onSave?.();
     } catch (error) {
       console.error("Erro ao salvar roteiro:", error);
-
       toast.error("Falha ao salvar o roteiro.", {
         description: "Ocorreu um erro inesperado. Tente novamente.",
         duration: 3000,
@@ -134,48 +142,50 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     }
   };
 
-  // Mapeia os status para cores
   const getStatusStyle = (status) => {
     switch (status) {
-      case "Exibido":
-        return {
-          fill: [209, 250, 229],
-          text: [6, 95, 70],
-          border: [110, 231, 183],
-        }; // verde
-      case "Em Produção":
-        return {
-          fill: [254, 243, 199],
-          text: [146, 64, 14],
-          border: [252, 211, 77],
-        }; // amarelo
       case "Aprovado":
         return {
           fill: [219, 234, 254],
           text: [30, 64, 175],
           border: [147, 197, 253],
-        }; // azul
+        };
+      case "Cancelado":
+        return {
+          fill: [254, 226, 226],
+          text: [159, 18, 57],
+          border: [252, 165, 165],
+        };
+      case "Em Produção":
+        return {
+          fill: [254, 243, 199],
+          text: [146, 64, 14],
+          border: [252, 211, 77],
+        };
       case "Em Revisão":
         return {
           fill: [252, 231, 243],
           text: [157, 23, 77],
           border: [251, 207, 232],
-        }; // rosa
+        };
+      case "Exibido":
+        return {
+          fill: [209, 250, 229],
+          text: [6, 95, 70],
+          border: [110, 231, 183],
+        };
+
       default:
         return {
           fill: [243, 244, 246],
           text: [31, 41, 55],
           border: [209, 213, 219],
-        }; // cinza
+        };
     }
   };
 
   function convertDate(date) {
-    const displaydate = date
-      ? new Date(date).toLocaleDateString("pt-BR")
-      : "N/A";
-
-    return displaydate;
+    return date ? new Date(date).toLocaleDateString("pt-BR") : "N/A";
   }
 
   const handleExportPDF = async () => {
@@ -197,68 +207,70 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
         const logoY = 15;
         doc.addImage(base64data, "PNG", x, logoY, imgWidth, imgHeight);
 
-        // --- STATUS COMO BADGE ESTILIZADO (em cima, à direita da logo) ---
         if (formData.status) {
           const statusText = formData.status.toUpperCase();
           const colors = getStatusStyle(formData.status);
-
           const fontSize = 10;
           doc.setFontSize(fontSize);
           doc.setFont("helvetica", "bold");
-
           const paddingX = 6;
           const textWidth = doc.getTextWidth(statusText);
           const badgeWidth = textWidth + paddingX * 2;
           const badgeHeight = 10;
-
-          const badgeX = pageWidth - badgeWidth - 14; // canto direito
-          const badgeY = logoY; // alinhado com a logo no topo
-
-          // Fundo arredondado
+          const badgeX = pageWidth - badgeWidth - 14;
+          const badgeY = logoY;
           doc.setFillColor(...colors.fill);
           doc.setDrawColor(...colors.border);
           doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3, 3, "FD");
-
-          // Texto centralizado
           const textX = badgeX + badgeWidth / 2;
           const textY = badgeY + badgeHeight / 2 + fontSize * 0.15;
           doc.setTextColor(...colors.text);
           doc.text(statusText, textX, textY, { align: "center" });
         }
 
-        // --- TÍTULO DA PAUTA ---
         const pautaTitle = formData.pauta || "Roteiro Sem Título";
         doc.setFont("helvetica", "bold");
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-
         const maxTitleWidth = pageWidth * 0.7;
         const lines = doc.splitTextToSize(
           pautaTitle.toUpperCase(),
           maxTitleWidth
         );
-
-        const firstLineY = 55; // Y inicial para o título
+        const firstLineY = 55;
         doc.text(lines, pageWidth / 2, firstLineY, { align: "center" });
-
-        // calcula a altura que o título ocupou
         const lineHeight = doc.getLineHeight() / doc.internal.scaleFactor;
         const titleHeight = lines.length * lineHeight;
-
-        // posição Y logo abaixo do título
         const nextY = firstLineY + titleHeight + 2;
 
-        // --- TABELA DE INFORMAÇÕES ---
+        const infoBody = [
+          ["PROGRAMA", formData.program || "N/A"],
+          ["PRODUTOR", formData.produtor || "N/A"],
+          ["APRESENTADOR", formData.apresentador || "N/A"],
+          ["CIDADE", formData.cidade || "N/A"],
+          ["BAIRRO", formData.bairro || "N/A"],
+          ["DATA DA GRAVAÇÃO", convertDate(formData.dataGravacao) || "N/A"],
+          ["DATA DE EXIBIÇÃO", convertDate(formData.dataExibicao) || "N/A"],
+        ];
+
+        if (formData.status === "Cancelado") {
+          if (formData.motivoCancelamento) {
+            infoBody.push([
+              "MOTIVO DO CANCELAMENTO",
+              formData.motivoCancelamento,
+            ]);
+          }
+          if (formData.dataCancelamento) {
+            infoBody.push([
+              "DATA DO CANCELAMENTO",
+              convertDate(formData.dataCancelamento),
+            ]);
+          }
+        }
+
         autoTable(doc, {
           startY: nextY,
-          body: [
-            ["PRODUTOR", formData.produtor || "N/A"],
-            ["APRESENTADOR", formData.apresentador || "N/A"],
-            ["CIDADE", formData.cidade || "N/A"],
-            ["BAIRRO", formData.bairro || "N/A"],
-            ["DATA DA GRAVAÇÃO", convertDate(formData.dataGravacao) || "N/A"],
-            ["DATA DE EXIBIÇÃO", convertDate(formData.dataExibicao) || "N/A"],
-          ],
+          body: infoBody,
           theme: "grid",
           styles: {
             fontSize: 10,
@@ -271,11 +283,21 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
             0: { fontStyle: "bold", cellWidth: 60 },
             1: { cellWidth: "auto" },
           },
+          didParseCell: function (data) {
+            if (formData.status === "Cancelado") {
+              const isMotivoRow = data.row.raw[0] === "MOTIVO DO CANCELAMENTO";
+              const isDataRow = data.row.raw[0] === "DATA DO CANCELAMENTO";
+
+              if (isMotivoRow || isDataRow) {
+                data.cell.styles.fillColor = [254, 226, 226];
+                data.cell.styles.textColor = [159, 18, 57];
+                data.cell.styles.fontStyle = "bold";
+              }
+            }
+          },
         });
 
-        // --- TABELA DE ROTEIRO ---
         const tableData = scriptRows.map((row) => [row.video, row.texto]);
-
         autoTable(doc, {
           startY: doc.lastAutoTable.finalY + 10,
           head: [["VÍDEO", "TEXTO"]],
@@ -311,11 +333,8 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           },
         });
 
-        toast.success("Roteiro exportado com sucesso!", {
-          duration: 3000,
-        });
+        toast.success("Roteiro exportado com sucesso!", { duration: 3000 });
 
-        // --- SALVAR ---
         const fileName = `roteiro_${(formData.pauta || "sem_titulo")
           .replace(/\s+/g, "_")
           .toLowerCase()}.pdf`;
@@ -347,7 +366,6 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
             </h1>
           </div>
         </div>
-
         {isReadOnly && (
           <Button onClick={handleExportPDF} className="gap-2">
             <Download className="h-4 w-4" />

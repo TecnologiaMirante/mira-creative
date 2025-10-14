@@ -1,5 +1,3 @@
-// /components/dashboard/ScriptList.js
-
 import { Card } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { ScriptCard } from "./ScriptCard";
@@ -41,7 +39,8 @@ export function ScriptList({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    // AUMENTADO O ESPAÇAMENTO PARA OS CARDS RESPIRAREM MELHOR
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {scripts.map((script) => (
         <ScriptCard
           key={script.id}

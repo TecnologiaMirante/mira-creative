@@ -1,5 +1,4 @@
 // /components/roteiros/DetailedScriptCard.js
-"use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +59,6 @@ export function DetailedScriptCard({
                   <TableCell className="p-2">
                     <Textarea
                       value={row.video}
-                      // Chama a função do pai para atualizar o campo específico desta linha
                       onChange={(e) =>
                         onUpdateRow(row.id, "video", e.target.value)
                       }

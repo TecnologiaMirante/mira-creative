@@ -10,7 +10,7 @@ initializeApp();
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
-exports.askDaqui = onCall( 
+exports.askDaqui = onCall(
   {
     secrets: [GEMINI_API_KEY],
     region: "southamerica-east1",
@@ -28,7 +28,10 @@ exports.askDaqui = onCall(
       );
     }
 
-    const userQuestion = history.pop().content;
+    // A última mensagem do histórico é a pergunta atual do usuário
+    const userQuestion = history[history.length - 1].content;
+    // O histórico de conversas anterior é todo o resto
+    const conversationHistory = history.slice(0, -1);
 
     try {
       const db = getFirestore();
@@ -39,9 +42,8 @@ exports.askDaqui = onCall(
       }));
       const contextData = JSON.stringify(pautasData, null, 2);
 
-      const now = new Date();
-
-      const systemInstruction = `
+      // A instrução do sistema é preparada como um texto normal
+      const systemInstructionText = `
         Você é 'Daqui', um assistente de IA especialista em analisar dados de roteiros para uma produtora.
         Sua única fonte de conhecimento são os dados em formato JSON fornecidos aqui.
         Responda as perguntas do usuário de forma concisa e amigável, baseando-se SOMENTE nos dados.
@@ -59,20 +61,39 @@ exports.askDaqui = onCall(
         ${contextData}
       `;
 
-      const geminiHistory = history.map((msg) => ({
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.value());
+
+      // O modelo é inicializado sem a instrução de sistema aqui
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+      });
+
+      // O histórico da conversa é formatado corretamente
+      const geminiHistory = conversationHistory.map((msg) => ({
         role: msg.role,
         parts: [{ text: msg.content }],
       }));
 
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.value());
-
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
-        systemInstruction: systemInstruction,
-      });
-
+      // A instrução de sistema é injetada no início do histórico do chat
       const chat = model.startChat({
-        history: geminiHistory,
+        history: [
+          // 1. A instrução de sistema age como a primeira mensagem do "usuário"
+          {
+            role: "user",
+            parts: [{ text: systemInstructionText }],
+          },
+          // 2. Uma resposta padrão do "modelo" para confirmar o entendimento
+          {
+            role: "model",
+            parts: [
+              {
+                text: "Entendido. Estou pronto para ajudar com base nos dados fornecidos.",
+              },
+            ],
+          },
+          // 3. O histórico real da conversa é adicionado em seguida
+          ...geminiHistory,
+        ],
       });
 
       const result = await chat.sendMessage(userQuestion);

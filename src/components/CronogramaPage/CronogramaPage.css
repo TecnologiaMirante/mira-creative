@@ -1,0 +1,211 @@
+/* --- Estrutura Geral e Cabeçalho --- */
+.cronograma-page {
+  padding: 2rem;
+  background-color: #f9fafb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-toggles {
+  display: flex;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+/* --- Container do Calendário --- */
+.calendar-container {
+  flex-grow: 1;
+  min-height: 800px;
+}
+
+/* --- Estilos do FullCalendar --- */
+:root {
+  --fc-border-color: #e5e7eb;
+  --fc-page-bg-color: #ffffff;
+  --fc-neutral-bg-color: #f9fafb;
+  --fc-list-event-hover-bg-color: #f3f4f6;
+  --fc-today-bg-color: rgba(66, 133, 244, 0.05);
+}
+
+.fc {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--fc-border-color);
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin: 0;
+  padding: 1rem;
+  background-color: white;
+  border-bottom: 1px solid var(--fc-border-color);
+}
+
+.fc .fc-col-header-cell {
+  background-color: white;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.fc-theme-standard .fc-list-day-cushion {
+  background-color: var(--fc-neutral-bg-color);
+}
+
+/* --- Estilos dos Eventos --- */
+.fc-event {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #1f2937 !important;
+  padding: 4px 6px !important;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.fc-event .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cores por Status */
+.fc-event-aprovado {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+.fc-event-producao {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+}
+.fc-event-exibido {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+  color: #065f46 !important;
+}
+.fc-event-revisao {
+  background-color: #fce7f3 !important;
+  border-color: #f9a8d4 !important;
+  color: #9d174d !important;
+}
+.fc-event-cancelado {
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+}
+.fc-event-default {
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  color: #374151 !important;
+}
+
+/* --- Tooltip --- */
+.event-tooltip {
+  position: fixed;
+  transform: translate(10px, 10px);
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  width: 320px;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(10px, 5px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(10px, 10px);
+  }
+}
+
+.tooltip-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.tooltip-title {
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.tooltip-content {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.tooltip-row svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* --- Cores dos Badges no Tooltip --- */
+.badge-aprovado {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+.badge-producao {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+.badge-exibido {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.badge-revisao {
+  background-color: #fce7f3;
+  color: #9d174d;
+}
+.badge-cancelado {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.badge-default {
+  background-color: #f3f4f6;
+  color: #374151;
+}
