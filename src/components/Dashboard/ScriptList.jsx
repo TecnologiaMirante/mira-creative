@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { ScriptCard } from "./ScriptCard";
+import { LoadingOverlay } from "../LoadingOverlay";
 
 export function ScriptList({
   scripts,
@@ -10,11 +11,10 @@ export function ScriptList({
   isLoading,
   hasActiveFilter,
 }) {
+  console.log(scripts);
   if (isLoading) {
     return (
-      <Card className="p-12 text-center">
-        <p className="text-muted-foreground">Carregando roteiros...</p>
-      </Card>
+      <LoadingOverlay message={"Carregando roteiros..."} success={false} />
     );
   }
 
@@ -39,7 +39,6 @@ export function ScriptList({
   }
 
   return (
-    // AUMENTADO O ESPAÇAMENTO PARA OS CARDS RESPIRAREM MELHOR
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {scripts.map((script) => (
         <ScriptCard

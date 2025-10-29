@@ -1,3 +1,5 @@
+// /src/context/UserContext.js
+
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { getDoc, doc } from "firebase/firestore";
@@ -28,6 +30,8 @@ export const UserProvider = ({ children }) => {
     return storedToken && !isTokenExpired(storedToken) ? storedToken : null;
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // Auto logout se o token expirar
   useEffect(() => {
     if (token && isTokenExpired(token)) {
@@ -57,7 +61,10 @@ export const UserProvider = ({ children }) => {
           };
           login({ token: idToken, user: userData });
         }
+      } else {
+        logout();
       }
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -80,7 +87,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout }}>
+    <UserContext.Provider value={{ user, token, login, logout, isLoading }}>
       {children}
     </UserContext.Provider>
   );

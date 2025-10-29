@@ -11,6 +11,7 @@ import {
   Tv,
   CalendarDays,
   Circle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -23,6 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import UserContext from "@/context/UserContext";
+import { useContext } from "react";
 
 // --- Paleta de Estilos Profissional e Sóbria ---
 const getProgramStyle = (program) => {
@@ -62,6 +65,8 @@ const InfoItem = ({ icon: Icon, children }) => (
 );
 
 export function ScriptCard({ script, onView, onEdit, onDelete }) {
+  const { user: user } = useContext(UserContext);
+
   function convertDate(dateString) {
     if (!dateString) return "Não definida";
     const date = new Date(`${dateString}T00:00:00`);
@@ -71,6 +76,26 @@ export function ScriptCard({ script, onView, onEdit, onDelete }) {
       month: "2-digit",
       year: "numeric",
     });
+  }
+
+  // --- CALCULAR SE AS DATAS SÃO INVÁLIDAS ---
+  let isDateInvalid = false;
+  if (script.dataGravacao && script.dataExibicao) {
+    try {
+      const gravacaoDate = new Date(`${script.dataGravacao}T00:00:00`);
+      const exibicaoDate = new Date(`${script.dataExibicao}T00:00:00`);
+      // Verifica se as datas são válidas e se exibicao é anterior a gravacao
+      if (
+        !isNaN(gravacaoDate) &&
+        !isNaN(exibicaoDate) &&
+        exibicaoDate < gravacaoDate
+      ) {
+        isDateInvalid = true;
+      }
+    } catch (e) {
+      console.error("Erro ao comparar datas no Card:", e);
+      // Tratar como válido se houver erro na conversão para evitar falsos positivos
+    }
   }
 
   const statusStyle = getStatusStyle(script.status);
@@ -102,6 +127,7 @@ export function ScriptCard({ script, onView, onEdit, onDelete }) {
 
         {/* Linha de Informações */}
         <CardContent className="p-0 space-y-4">
+          {/* Linha de Produtor e Apresentador*/}
           <div className="grid grid-cols-1 gap-x-4 gap-y-1 pt-4 border-t border-slate-100">
             <InfoItem icon={User}>
               <p>
@@ -134,12 +160,35 @@ export function ScriptCard({ script, onView, onEdit, onDelete }) {
               </p>
             </InfoItem>
             <InfoItem icon={CalendarDays}>
-              <p>
-                <span className="font-semibold text-slate-700">Exibição: </span>
+              {/* --- APLICA ESTILO CONDICIONAL AQUI --- */}
+              <p
+                className={
+                  isDateInvalid
+                    ? "text-red-600 font-semibold flex items-center gap-1"
+                    : ""
+                }
+              >
+                {isDateInvalid && (
+                  <AlertTriangle className="h-4 w-4 inline-block" />
+                )}{" "}
+                {/* Ícone de alerta */}
+                <span
+                  className={`font-semibold ${
+                    isDateInvalid ? "text-red-700" : "text-slate-700"
+                  }`}
+                >
+                  Exibição:{" "}
+                </span>
                 {convertDate(script.dataExibicao)}
               </p>
             </InfoItem>
           </div>
+          {/* Mensagem de Alerta se a data for inválida */}
+          {isDateInvalid && (
+            <p className="text-xs text-red-500 font-medium px-1 pt-1">
+              Atenção: Data de exibição anterior à gravação!
+            </p>
+          )}
         </CardContent>
       </div>
 
@@ -157,47 +206,52 @@ export function ScriptCard({ script, onView, onEdit, onDelete }) {
           >
             <Eye className="h-4 w-4" /> Ver
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-2 bg-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(script);
-            }}
-          >
-            <Edit className="h-4 w-4" /> Editar
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          {user?.typeUser !== "Visualizador" && (
+            <>
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 gap-2 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
-                onClick={(e) => e.stopPropagation()}
+                className="flex-1 gap-2 bg-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(script);
+                }}
               >
-                <Trash2 className="h-4 w-4" /> Excluir
+                <Edit className="h-4 w-4" /> Editar
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação não pode ser desfeita. Isso excluirá permanentemente
-                  este roteiro dos nossos servidores.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDelete(script.id)}
-                  className="bg-destructive hover:bg-destructive/90"
-                >
-                  Continuar e Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Trash2 className="h-4 w-4" /> Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Você tem certeza absoluta?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Essa ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(script.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Continuar e Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
         </div>
       </div>
     </Card>

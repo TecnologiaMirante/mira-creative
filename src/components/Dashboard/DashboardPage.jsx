@@ -10,6 +10,8 @@ import {
   deleteDoc,
   query,
   orderBy,
+  where,
+  updateDoc,
 } from "firebase/firestore";
 import { StatsGrid } from "./StatsGrid";
 import { FilterBar } from "./FilterBar";
@@ -40,9 +42,9 @@ export function DashboardPage({ onEditScript, onViewScript }) {
   useEffect(() => {
     setIsLoading(true);
 
-    // Ordena primeiro por 'createdAt' (decrescente) e depois por 'pauta' (crescente/alfabética)
     const q = query(
       collection(db, "pautas"),
+      where("isVisible", "==", true),
       orderBy("createdAt", "desc"),
       orderBy("pauta", "asc")
     );
@@ -126,7 +128,8 @@ export function DashboardPage({ onEditScript, onViewScript }) {
 
   const handleDeleteScript = async (scriptId) => {
     try {
-      await deleteDoc(doc(db, "pautas", scriptId));
+      const scriptDocRef = doc(db, "pautas", scriptId);
+      await updateDoc(scriptDocRef, { isVisible: false });
       toast.error("Roteiro excluído com sucesso!", {
         duration: 3000,
       });

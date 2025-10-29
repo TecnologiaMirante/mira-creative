@@ -1,8 +1,10 @@
+/* /src/components/CronogramaPage/CronogramaPage.csss */
+
 /* --- Estrutura Geral e Cabeçalho --- */
 .cronograma-page {
   padding: 2rem;
   background-color: #f9fafb;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -42,7 +44,7 @@
 /* --- Container do Calendário --- */
 .calendar-container {
   flex-grow: 1;
-  min-height: 800px;
+  min-height: 80vh;
 }
 
 /* --- Estilos do FullCalendar --- */
@@ -75,53 +77,6 @@
 
 .fc-theme-standard .fc-list-day-cushion {
   background-color: var(--fc-neutral-bg-color);
-}
-
-/* --- Estilos dos Eventos --- */
-.fc-event {
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  color: #1f2937 !important;
-  padding: 4px 6px !important;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.fc-event .fc-event-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Cores por Status */
-.fc-event-aprovado {
-  background-color: #dbeafe !important;
-  border-color: #93c5fd !important;
-  color: #1e40af !important;
-}
-.fc-event-producao {
-  background-color: #fef3c7 !important;
-  border-color: #fcd34d !important;
-  color: #92400e !important;
-}
-.fc-event-exibido {
-  background-color: #d1fae5 !important;
-  border-color: #6ee7b7 !important;
-  color: #065f46 !important;
-}
-.fc-event-revisao {
-  background-color: #fce7f3 !important;
-  border-color: #f9a8d4 !important;
-  color: #9d174d !important;
-}
-.fc-event-cancelado {
-  background-color: #fee2e2 !important;
-  border-color: #fca5a5 !important;
-  color: #991b1b !important;
-}
-.fc-event-default {
-  background-color: #f3f4f6 !important;
-  border-color: #d1d5db !important;
-  color: #374151 !important;
 }
 
 /* --- Tooltip --- */

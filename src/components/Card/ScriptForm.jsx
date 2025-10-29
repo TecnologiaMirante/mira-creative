@@ -1,6 +1,6 @@
 // /src/components/Card/ScriptForm/index.jsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { db } from "../../../firebase";
 import {
   collection,
@@ -10,12 +10,20 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { Save, ArrowLeft, Download } from "lucide-react";
 import { BasicInfoCard } from "./BasicInfoCard";
 import { DetailedScriptCard } from "./DetailedScriptCard ";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
+import { exportScriptToPDF } from "@/lib/exportUtils";
+import { Save, ArrowLeft, Download } from "lucide-react";
+import UserContext from "@/context/UserContext";
+
+// Estado inicial da linha AGORA COM SUGESTÕES
+const initialScriptRow = {
+  id: Date.now().toString(),
+  video: "",
+  texto: "",
+  suggestion: { video: null, texto: null },
+};
 
 const initialState = {
   program: "Daqui",
@@ -24,37 +32,60 @@ const initialState = {
   bairro: "",
   pauta: "",
   apresentador: "",
-  dataGravacao: "",
-  dataExibicao: "",
+  dataGravacao: null,
+  dataExibicao: null,
   status: "",
   scriptRows: [],
   motivoCancelamento: "",
-  dataCancelamento: "",
+  dataCancelamento: null,
+  isVisible: true,
 };
 
 export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
+  const { user: user } = useContext(UserContext);
   const [formData, setFormData] = useState(initialState);
-  const [scriptRows, setScriptRows] = useState([
-    { id: Date.now().toString(), video: "", texto: "" },
-  ]);
+  const [scriptRows, setScriptRows] = useState([initialScriptRow]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAIAssistantLoading, setIsAIAssistantLoading] = useState(false);
   const [cidades, setCidades] = useState([]);
   const isReadOnly = mode === "view";
-
+  const [dateValidationError, setDateValidationError] = useState("");
+  // UseEffect para popular dados
   useEffect(() => {
     if ((mode === "edit" || mode === "view") && initialData) {
-      setFormData({ ...initialState, ...initialData });
-      setScriptRows(
+      const formattedData = {
+        ...initialState,
+        ...initialData,
+        dataGravacao: initialData.dataGravacao
+          ? new Date(`${initialData.dataGravacao}T00:00:00`)
+          : null,
+        dataExibicao: initialData.dataExibicao
+          ? new Date(`${initialData.dataExibicao}T00:00:00`)
+          : null,
+        dataCancelamento: initialData.dataCancelamento
+          ? new Date(`${initialData.dataCancelamento}T00:00:00`)
+          : null,
+      };
+      setFormData(formattedData);
+
+      // Garante que as linhas carregadas tenham a estrutura de suggestion
+      const populatedRows =
         initialData.scriptRows?.length > 0
-          ? initialData.scriptRows
-          : [{ id: Date.now().toString(), video: "", texto: "" }]
-      );
+          ? initialData.scriptRows.map((row) => ({
+              ...initialScriptRow, // Garante a estrutura completa
+              ...row,
+              id: row.id || Date.now().toString(), // Garante um ID
+              suggestion: row.suggestion || { video: null, texto: null }, // Garante o objeto suggestion
+            }))
+          : [initialScriptRow]; // Se não houver linhas, começa com uma nova
+      setScriptRows(populatedRows);
     } else {
       setFormData(initialState);
-      setScriptRows([{ id: Date.now().toString(), video: "", texto: "" }]);
+      setScriptRows([initialScriptRow]);
     }
   }, [initialData, mode]);
 
+  // useEffect para carregar cidades do IBGE
   useEffect(() => {
     fetch(
       "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios"
@@ -71,6 +102,25 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
       .catch((err) => console.error("Erro ao carregar cidades:", err));
   }, []);
 
+  // useEffect para validar data de exibição
+  useEffect(() => {
+    // Verifica apenas se ambas as datas foram selecionadas
+    if (formData.dataGravacao && formData.dataExibicao) {
+      // Compara os objetos Date diretamente
+      if (formData.dataExibicao < formData.dataGravacao) {
+        setDateValidationError(
+          "A data de exibição não pode ser anterior à data de gravação."
+        );
+      } else {
+        setDateValidationError(""); // Limpa o erro se as datas forem válidas
+      }
+    } else {
+      setDateValidationError(""); // Limpa o erro se uma das datas não estiver preenchida
+    }
+    // Roda toda vez que uma das datas mudar
+  }, [formData.dataGravacao, formData.dataExibicao]);
+
+  // Handler de input básico
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
       const newState = { ...prev, [field]: value };
@@ -82,10 +132,16 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     });
   };
 
+  // Handlers de linha de roteiro
   const addScriptRow = () =>
     setScriptRows([
       ...scriptRows,
-      { id: Date.now().toString(), video: "", texto: "" },
+      {
+        id: Date.now().toString(),
+        video: "",
+        texto: "",
+        suggestion: { video: null, texto: null },
+      },
     ]);
 
   const removeScriptRow = (id) =>
@@ -99,18 +155,235 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     );
   };
 
+  // Handler de sugestão de linha de roteiro
+  const handleAcceptSuggestion = (id, field) => {
+    setScriptRows((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === id && row.suggestion[field]) {
+          return {
+            ...row,
+            [field]: row.suggestion[field], // Aplica a sugestão
+            suggestion: { ...row.suggestion, [field]: null }, // Limpa a sugestão específica
+          };
+        }
+        return row;
+      })
+    );
+  };
+
+  // Handler de recusa de sugestão de linha de roteiro
+  const handleDeclineSuggestion = (id, field) => {
+    setScriptRows((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === id) {
+          return {
+            ...row,
+            suggestion: { ...row.suggestion, [field]: null }, // Apenas limpa a sugestão
+          };
+        }
+        return row;
+      })
+    );
+  };
+
+  // Handler de aceitação de todas as sugestões
+  const handleAcceptAllSuggestions = () => {
+    setScriptRows((prevRows) =>
+      prevRows.map((row) => {
+        const newRow = { ...row };
+        if (newRow.suggestion.video) {
+          newRow.video = newRow.suggestion.video;
+        }
+        if (newRow.suggestion.texto) {
+          newRow.texto = newRow.suggestion.texto;
+        }
+        // Limpa todas as sugestões da linha
+        newRow.suggestion = { video: null, texto: null };
+        return newRow;
+      })
+    );
+  };
+
+  // Handler de recusa de todas as sugestões
+  const handleDeclineAllSuggestions = () => {
+    setScriptRows((prevRows) =>
+      prevRows.map((row) => ({
+        ...row,
+        suggestion: { video: null, texto: null }, // Limpa todas
+      }))
+    );
+  };
+
+  // Handler de aprimoramento de roteiro
+  const handleAprimorarRoteiro = async () => {
+    setIsAIAssistantLoading(true);
+
+    const scriptDataForAI = scriptRows.map((row) => ({
+      id: row.id,
+      video: row.video,
+      texto: row.texto,
+    }));
+
+    // Prompt para o AI Assistant
+    const prompt = `
+    Você é um editor de roteiros de TV sênior e colaborativo. O tema geral da matéria é "${
+      formData.pauta
+    }".
+    Analise o roteiro completo a seguir, que está em formato de array de objetos JSON.
+    
+    Roteiro completo:
+    ${JSON.stringify(scriptDataForAI, null, 2)}
+
+    Sua tarefa é analisar o tema e o roteiro para sugerir melhorias para CADA trecho.
+
+    **REGRAS PARA AS SUGESTÕES:**
+
+    **1. Para "video_suggestion" (O que mostrar):**
+    * Este campo é para INSTRUÇÕES VISUAIS.
+    * Se o campo "video" original estiver vazio, sugira o que mostrar [Use verbos no infinitivo, ex: "Mostrar a fachada do prédio...", "Inserir gráfico de..."]
+    * Se o "video" original tiver conteúdo, sugira melhorias visuais [Use imperativo brando, ex: "Considere um close-up...", "Adicione um efeito de slow-motion...", "Aqui pode ser interessante um take aéreo..."].
+    * Sempre que possível, indique trilhas sonoras, efeitos sonoros ou ângulos de câmera.
+
+    **2. Para "texto_suggestion" (O que falar):**
+    * Este campo deve conter a **FALA PRONTA** (narração, diálogo ou "passagem" do repórter).
+    * **NÃO** dê instruções sobre o que dizer (Exemplo RUIM: "Tente adicionar uma frase sobre o impacto.").
+    * **FAÇA:** Escreva a fala exata, como se fosse para o teleprompter (Exemplo BOM: "O impacto econômico é sentido diretamente no bolso do consumidor.").
+    * Se o "texto" original estiver vazio, escreva uma fala que se encaixe na sugestão de vídeo.
+    * Se o "texto" original tiver conteúdo, reescreva-o de forma mais clara, envolvente ou dinâmica, mantendo o estilo jornalístico.
+
+    Lembre-se de manter a coerência com o tema proposto.
+
+    Retorne sua resposta como um ÚNICO objeto JSON. Este objeto deve ter uma única chave chamada "sugestoes", que contém um array de objetos, mantendo o 'id' original de cada trecho. O formato de retorno deve ser estritamente o seguinte, sem nenhum texto adicional:
+    {
+      "sugestoes": [
+        {
+          "id": <id_original>,
+          "video_suggestion": "<Sua INSTRUÇÃO VISUAL para o vídeo>",
+          "texto_suggestion": "<Sua FALA PRONTA para a narração/diálogo>"
+        }
+      ]
+    }
+    `;
+
+    const apiKey = import.meta.env.VITE_API_KEY_OPENAI;
+    const organization = import.meta.env.VITE_API_ORG_OPENAI;
+    const project = import.meta.env.VITE_API_PROJECT_OPENAI;
+
+    try {
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+            "OpenAI-Organization": organization,
+            "OpenAI-Project": project,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo-1106",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Sua resposta deve ser estritamente o objeto JSON solicitado...",
+              },
+              { role: "user", content: prompt },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Erro da API: ${response.statusText} (${response.status})`
+        );
+      }
+
+      const data = await response.json();
+      // Validação básica da resposta
+      if (
+        !data.choices ||
+        !data.choices[0] ||
+        !data.choices[0].message ||
+        !data.choices[0].message.content
+      ) {
+        throw new Error("Resposta da API inválida ou vazia.");
+      }
+
+      const responseContent = JSON.parse(data.choices[0].message.content);
+
+      // Validação do conteúdo JSON
+      if (!responseContent || !Array.isArray(responseContent.sugestoes)) {
+        throw new Error(
+          "Formato JSON de sugestões inválido na resposta da API."
+        );
+      }
+
+      const suggestionsArray = responseContent.sugestoes;
+
+      // Atualiza o estado com as sugestões
+      setScriptRows((prevRows) =>
+        prevRows.map((row) => {
+          const suggestionForRow = suggestionsArray.find(
+            (s) => String(s.id) === String(row.id)
+          ); // Compara como string por segurança
+          if (suggestionForRow) {
+            return {
+              ...row,
+              suggestion: {
+                video: suggestionForRow.video_suggestion || null, // Garante null se vazio
+                texto: suggestionForRow.texto_suggestion || null,
+              },
+            };
+          }
+          return { ...row, suggestion: { video: null, texto: null } }; // Garante limpar sugestões antigas se não vier nova
+        })
+      );
+
+      toast.success("Sugestões da IA carregadas!");
+    } catch (error) {
+      console.error("Falha ao chamar a API da OpenAI:", error);
+      toast.error("Ocorreu um erro ao buscar as sugestões.", {
+        description: error.message || "Verifique o console para mais detalhes.",
+      });
+    } finally {
+      setIsAIAssistantLoading(false);
+    }
+  };
+
+  // Handler de envio do formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validar data
+    if (dateValidationError) {
+      toast.error("Erro de Validação", {
+        description: dateValidationError, // Mostra a mesma mensagem
+        duration: 5000,
+      });
+      return; // Impede o salvamento se houver erro
+    }
+
     setIsLoading(true);
 
     const dataToSave = {
       ...formData,
-      scriptRows: scriptRows.filter(
-        (row) => row.video.trim() || row.texto.trim()
-      ),
+      dataGravacao: formData.dataGravacao
+        ? formData.dataGravacao.toISOString().split("T")[0]
+        : "",
+      dataExibicao: formData.dataExibicao
+        ? formData.dataExibicao.toISOString().split("T")[0]
+        : "",
+      dataCancelamento: formData.dataCancelamento
+        ? formData.dataCancelamento.toISOString().split("T")[0]
+        : "",
+      scriptRows: scriptRows
+        .filter((row) => row.video.trim() || row.texto.trim())
+        .map(({ id, video, texto }) => ({ id, video, texto })),
     };
 
-    // Garante que os campos de cancelamento só sejam salvos se o status for "Cancelado"
     if (dataToSave.status !== "Cancelado") {
       dataToSave.motivoCancelamento = "";
       dataToSave.dataCancelamento = "";
@@ -119,11 +392,18 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     try {
       if (mode === "edit") {
         const scriptDocRef = doc(db, "pautas", initialData.id);
-        await updateDoc(scriptDocRef, dataToSave);
+        await updateDoc(scriptDocRef, {
+          ...dataToSave,
+          editedAt: serverTimestamp(),
+          editedBy: user?.uid,
+        });
       } else {
         await addDoc(collection(db, "pautas"), {
           ...dataToSave,
           createdAt: serverTimestamp(),
+          createdBy: user?.uid,
+          editedAt: null,
+          editedBy: null,
         });
       }
       toast.success(
@@ -142,212 +422,15 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     }
   };
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "Aprovado":
-        return {
-          fill: [219, 234, 254],
-          text: [30, 64, 175],
-          border: [147, 197, 253],
-        };
-      case "Cancelado":
-        return {
-          fill: [254, 226, 226],
-          text: [159, 18, 57],
-          border: [252, 165, 165],
-        };
-      case "Em Produção":
-        return {
-          fill: [254, 243, 199],
-          text: [146, 64, 14],
-          border: [252, 211, 77],
-        };
-      case "Em Revisão":
-        return {
-          fill: [252, 231, 243],
-          text: [157, 23, 77],
-          border: [251, 207, 232],
-        };
-      case "Exibido":
-        return {
-          fill: [209, 250, 229],
-          text: [6, 95, 70],
-          border: [110, 231, 183],
-        };
-
-      default:
-        return {
-          fill: [243, 244, 246],
-          text: [31, 41, 55],
-          border: [209, 213, 219],
-        };
-    }
+  // Handler de export PDF
+  const handleExport = () => {
+    exportScriptToPDF(formData, scriptRows);
   };
 
-  function convertDate(date) {
-    return date ? new Date(date).toLocaleDateString("pt-BR") : "N/A";
-  }
-
-  const handleExportPDF = async () => {
-    const doc = new jsPDF();
-    const pageHeight = doc.internal.pageSize.height;
-    const pageWidth = doc.internal.pageSize.width;
-
-    try {
-      const response = await fetch("/logo.png");
-      const blob = await response.blob();
-      const reader = new FileReader();
-
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        const base64data = reader.result;
-        const imgWidth = 30;
-        const imgHeight = 30;
-        const x = (pageWidth - imgWidth) / 2;
-        const logoY = 15;
-        doc.addImage(base64data, "PNG", x, logoY, imgWidth, imgHeight);
-
-        if (formData.status) {
-          const statusText = formData.status.toUpperCase();
-          const colors = getStatusStyle(formData.status);
-          const fontSize = 10;
-          doc.setFontSize(fontSize);
-          doc.setFont("helvetica", "bold");
-          const paddingX = 6;
-          const textWidth = doc.getTextWidth(statusText);
-          const badgeWidth = textWidth + paddingX * 2;
-          const badgeHeight = 10;
-          const badgeX = pageWidth - badgeWidth - 14;
-          const badgeY = logoY;
-          doc.setFillColor(...colors.fill);
-          doc.setDrawColor(...colors.border);
-          doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3, 3, "FD");
-          const textX = badgeX + badgeWidth / 2;
-          const textY = badgeY + badgeHeight / 2 + fontSize * 0.15;
-          doc.setTextColor(...colors.text);
-          doc.text(statusText, textX, textY, { align: "center" });
-        }
-
-        const pautaTitle = formData.pauta || "Roteiro Sem Título";
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0);
-        const maxTitleWidth = pageWidth * 0.7;
-        const lines = doc.splitTextToSize(
-          pautaTitle.toUpperCase(),
-          maxTitleWidth
-        );
-        const firstLineY = 55;
-        doc.text(lines, pageWidth / 2, firstLineY, { align: "center" });
-        const lineHeight = doc.getLineHeight() / doc.internal.scaleFactor;
-        const titleHeight = lines.length * lineHeight;
-        const nextY = firstLineY + titleHeight + 2;
-
-        const infoBody = [
-          ["PROGRAMA", formData.program || "N/A"],
-          ["PRODUTOR", formData.produtor || "N/A"],
-          ["APRESENTADOR", formData.apresentador || "N/A"],
-          ["CIDADE", formData.cidade || "N/A"],
-          ["BAIRRO", formData.bairro || "N/A"],
-          ["DATA DA GRAVAÇÃO", convertDate(formData.dataGravacao) || "N/A"],
-          ["DATA DE EXIBIÇÃO", convertDate(formData.dataExibicao) || "N/A"],
-        ];
-
-        if (formData.status === "Cancelado") {
-          if (formData.motivoCancelamento) {
-            infoBody.push([
-              "MOTIVO DO CANCELAMENTO",
-              formData.motivoCancelamento,
-            ]);
-          }
-          if (formData.dataCancelamento) {
-            infoBody.push([
-              "DATA DO CANCELAMENTO",
-              convertDate(formData.dataCancelamento),
-            ]);
-          }
-        }
-
-        autoTable(doc, {
-          startY: nextY,
-          body: infoBody,
-          theme: "grid",
-          styles: {
-            fontSize: 10,
-            cellPadding: 3,
-            halign: "left",
-            valign: "middle",
-            textColor: [0, 0, 0],
-          },
-          columnStyles: {
-            0: { fontStyle: "bold", cellWidth: 60 },
-            1: { cellWidth: "auto" },
-          },
-          didParseCell: function (data) {
-            if (formData.status === "Cancelado") {
-              const isMotivoRow = data.row.raw[0] === "MOTIVO DO CANCELAMENTO";
-              const isDataRow = data.row.raw[0] === "DATA DO CANCELAMENTO";
-
-              if (isMotivoRow || isDataRow) {
-                data.cell.styles.fillColor = [254, 226, 226];
-                data.cell.styles.textColor = [159, 18, 57];
-                data.cell.styles.fontStyle = "bold";
-              }
-            }
-          },
-        });
-
-        const tableData = scriptRows.map((row) => [row.video, row.texto]);
-        autoTable(doc, {
-          startY: doc.lastAutoTable.finalY + 10,
-          head: [["VÍDEO", "TEXTO"]],
-          body: tableData,
-          theme: "grid",
-          styles: {
-            fontSize: 10,
-            cellPadding: 3,
-            valign: "top",
-            textColor: [0, 0, 0],
-          },
-          headStyles: {
-            fillColor: [0, 0, 0],
-            textColor: [255, 255, 255],
-            fontStyle: "bold",
-            halign: "center",
-            fontSize: 11,
-          },
-          columnStyles: {
-            0: { cellWidth: 70, fontStyle: "bold" },
-            1: { cellWidth: "auto" },
-          },
-          didDrawPage: (data) => {
-            const pageCount = doc.internal.getNumberOfPages();
-            doc.setFontSize(8);
-            doc.setTextColor(100);
-            doc.text(
-              `Página ${data.pageNumber} de ${pageCount}`,
-              pageWidth - 20,
-              pageHeight - 10,
-              { align: "right" }
-            );
-          },
-        });
-
-        toast.success("Roteiro exportado com sucesso!", { duration: 3000 });
-
-        const fileName = `roteiro_${(formData.pauta || "sem_titulo")
-          .replace(/\s+/g, "_")
-          .toLowerCase()}.pdf`;
-        doc.save(fileName);
-      };
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      toast.error("Falha ao exportar roteiro.", {
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        duration: 3000,
-      });
-    }
-  };
+  // Helper para saber se há sugestões
+  const hasSuggestions = scriptRows.some(
+    (row) => row.suggestion.video || row.suggestion.texto
+  );
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -367,7 +450,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           </div>
         </div>
         {isReadOnly && (
-          <Button onClick={handleExportPDF} className="gap-2">
+          <Button onClick={handleExport} className="gap-2">
             <Download className="h-4 w-4" />
             Exportar PDF
           </Button>
@@ -379,6 +462,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           onFormChange={handleInputChange}
           cidades={cidades}
           isReadOnly={isReadOnly}
+          dateError={dateValidationError}
         />
         <DetailedScriptCard
           scriptRows={scriptRows}
@@ -386,6 +470,14 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           onRemoveRow={removeScriptRow}
           onUpdateRow={updateScriptRow}
           isReadOnly={isReadOnly}
+          isAIAssistantLoading={isAIAssistantLoading}
+          hasSuggestions={hasSuggestions}
+          pauta={formData.pauta}
+          onAprimorar={handleAprimorarRoteiro}
+          onAcceptAllSuggestions={handleAcceptAllSuggestions}
+          onDeclineAllSuggestions={handleDeclineAllSuggestions}
+          onAcceptSuggestion={handleAcceptSuggestion}
+          onDeclineSuggestion={handleDeclineSuggestion}
         />
         {!isReadOnly && (
           <div className="flex justify-end gap-4">

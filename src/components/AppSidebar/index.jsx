@@ -8,6 +8,7 @@ import {
   BarChart3,
   LogOut,
 } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
@@ -19,36 +20,23 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { useContext, useState } from "react";
 import UserContext from "../../context/UserContext";
-import { logout as firebaseLogout } from "../../../firebase";
 import Modal from "react-modal";
 import { Logout } from "../../components/Logout";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { auth } from "../../../firebase";
+import { signOut } from "firebase/auth";
 
-const mainMenuItems = [
-  { title: "Dashboard", icon: HomeIcon, id: "dashboard", badge: null },
-  { title: "Criar Roteiro", icon: FileText, id: "create-script", badge: null },
-  {
-    title: "Pergunte ao Daqui",
-    icon: MessageCircle,
-    id: "ai-chat",
-    badge: "IA",
-  },
-];
-
-const toolsMenuItems = [
-  { title: "Equipe", icon: Users, id: "team", badge: "5" },
-  { title: "Cronograma", icon: Calendar, id: "schedule", badge: null },
-  { title: "Relatórios", icon: BarChart3, id: "reports", badge: null },
-];
+const firebaseLogout = async () => {
+  await signOut(auth);
+};
 
 const SidebarToggle = () => {
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
-
   return (
     <Button
       variant="ghost"
@@ -65,12 +53,11 @@ const SidebarToggle = () => {
   );
 };
 
-export function AppSidebar() {
+const SidebarContents = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout: contextLogout } = useContext(UserContext);
   const [modalIsOpen, setModalIsOpen] = useState(false);
-
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -98,11 +85,31 @@ export function AppSidebar() {
     },
   };
 
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarToggle />
+  const mainMenuItems = [
+    { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
+    {
+      title: "Criar Roteiro",
+      icon: FileText,
+      id: "create-script",
+    },
 
-      {/* Sidebar header*/}
+    {
+      title: "Pergunte ao Daqui",
+      icon: MessageCircle,
+      id: "ai-chat",
+    },
+  ];
+
+  const toolsMenuItems = [
+    { title: "Equipe", icon: Users, id: "team" },
+    { title: "Cronograma", icon: Calendar, id: "schedule" },
+    { title: "Relatórios", icon: BarChart3, id: "reports" },
+  ];
+
+  return (
+    <>
+      <SidebarToggle />
+      {/* Sidebar Header*/}
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
           <FileText className="h-6 w-6 text-primary-foreground" />
@@ -116,11 +123,10 @@ export function AppSidebar() {
             Mira Creative
           </h1>
           <p className="text-sm text-muted-foreground whitespace-nowrap">
-            Gestão de Pautas
+            Produção Audiovisual
           </p>
         </div>
       </SidebarHeader>
-
       {/* Sidebar content*/}
       <SidebarContent className="px-2 py-4">
         {!isCollapsed && (
@@ -152,11 +158,6 @@ export function AppSidebar() {
                 >
                   {item.title}
                 </span>
-                {!isCollapsed && item.badge && (
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {item.badge}
-                  </Badge>
-                )}
               </Link>
             </SidebarMenuItem>
           ))}
@@ -190,17 +191,13 @@ export function AppSidebar() {
                   >
                     {item.title}
                   </span>
-                  {!isCollapsed && item.badge && (
-                    <Badge variant="outline" className="ml-auto text-xs">
-                      {item.badge}
-                    </Badge>
-                  )}
                 </Link>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      {/* Sidebar Footer*/}
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent">
           <img
@@ -250,6 +247,14 @@ export function AppSidebar() {
           }}
         />
       </Modal>
+    </>
+  );
+};
+
+export function AppSidebar() {
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarContents />
     </Sidebar>
   );
 }

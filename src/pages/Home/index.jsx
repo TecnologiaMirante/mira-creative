@@ -1,15 +1,19 @@
+// /src/pages/Home.jsx
+
 import { Routes, Route, useNavigate, useParams } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AiChat } from "@/components/AiChat";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { ScriptForm } from "@/components/Card/ScriptForm";
-import { CronogramaPage } from "@/components/CronogramaPage"; // 1. Importar a nova página
+import { CronogramaPage } from "@/components/CronogramaPage";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { Team } from "@/components/Team";
+import UserContext from "@/context/UserContext";
+import { AccessDenied } from "@/components/AccessDenied";
 
-// Componentes de carregamento (ScriptViewLoader, ScriptEditLoader) permanecem os mesmos...
 function ScriptViewLoader() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,7 +40,7 @@ function ScriptViewLoader() {
     <ScriptForm
       mode="view"
       initialData={scriptData}
-      onCancel={() => navigate("/home/dashboard")} // Volta para o dashboard
+      onCancel={() => navigate("/home/dashboard")}
     />
   );
 }
@@ -73,7 +77,6 @@ function ScriptEditLoader() {
   );
 }
 
-// --- Componente de Conteúdo Principal ---
 function MainContent() {
   const navigate = useNavigate();
 
@@ -120,8 +123,8 @@ function MainContent() {
         <Route path="/script/view/:id" element={<ScriptViewLoader />} />
         <Route path="/script/edit/:id" element={<ScriptEditLoader />} />
 
-        {/* 2. Adicionar a nova rota para o cronograma */}
         <Route path="/schedule" element={<CronogramaPage />} />
+        <Route path="/team" element={<Team />} />
       </Routes>
     </main>
   );
@@ -129,11 +132,13 @@ function MainContent() {
 
 // --- Componente Principal da Página Home ---
 export function Home() {
+  const { user: user } = useContext(UserContext);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
         <AppSidebar />
-        <MainContent />
+        {user?.typeUser !== "user" ? <MainContent /> : <AccessDenied />}
       </div>
     </SidebarProvider>
   );

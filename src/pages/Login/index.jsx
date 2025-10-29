@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { LoginButton } from "../../components/LoginButton";
 import UserContext from "../../context/UserContext";
 import {
@@ -15,8 +15,12 @@ import { Sparkles, Video, Users, Zap } from "lucide-react";
 export function Login() {
   const { token } = useContext(UserContext);
 
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || "/home/dashboard";
+
   if (token) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to={from} replace />;
   }
 
   return (

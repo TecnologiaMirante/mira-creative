@@ -1,23 +1,31 @@
 # Mira Creative
 
-Mira Creative é uma plataforma web para gerenciamento de roteiros e produção audiovisual, desenvolvida com React e Vite, utilizando Firebase como backend.
+Mira Creative é uma plataforma web robusta para gerenciamento de roteiros e produção audiovisual, desenvolvida com React e Vite, utilizando Firebase como backend e integrada com APIs de Inteligência Artificial para otimizar o fluxo de trabalho criativo.
 
 ## ✨ Funcionalidades Principais
 
 - **Autenticação Google Restrita**: Acesso seguro e exclusivo para contas `@mirante.com.br`.
-- **Dashboard de Roteiros**: Interface central para visualizar, filtrar, editar, excluir e criar novos roteiros.
-- **Filtros Avançados**: Ferramentas para encontrar roteiros por status, produtor, apresentador, cidade e bairro.
-- **Exportação para PDF**: Geração de documentos PDF detalhados a partir dos roteiros.
-- **Assistente de IA "Daqui"**: Chatbot integrado com a API do Google Gemini para responder dúvidas sobre os roteiros cadastrados.
-- **Gerenciamento de Equipe**: Funcionalidades para gerenciar equipes e cronogramas de produção.
-- **Interface Responsiva**: Layout adaptado para desktop e dispositivos móveis.
+- **Dashboard de Roteiros**: Interface central com visualização em cards para criar, visualizar, filtrar, editar e excluir roteiros.
+- **Gerenciamento de Permissões**: Sistema de papéis (Administrador, Produtor, etc.) que controla o acesso a funcionalidades como edição e exclusão.
+- **Filtros Avançados**: Ferramentas poderosas para encontrar roteiros por status, produtor, apresentador, programa e localidade.
+- **Cronograma de Produção**: Calendário interativo (`FullCalendar`) que exibe as datas de gravação e exibição, com filtros e visualizações por dia, semana e mês.
+- **Exportação para PDF**: Geração de documentos PDF profissionais e detalhados a partir dos roteiros, incluindo a logo da empresa.
+
+### 🤖 Recursos de Inteligência Artificial
+
+- **Aprimoramento de Roteiros com IA**: Ferramenta integrada à API da OpenAI (`GPT`) que analisa o roteiro existente e sugere melhorias para o texto e para as descrições de vídeo, linha por linha.
+- **Assistente de Chat "Daqui"**: Chatbot integrado à API do Google Gemini (`Firebase Cloud Function`) que responde a perguntas sobre os roteiros cadastrados, agindo como um especialista nos dados da plataforma.
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Frontend**: React, Vite, Tailwind CSS
 - **Componentes UI**: Shadcn UI
-- **Backend & Infra**: Firebase (Authentication, Firestore, Cloud Functions, Storage)
-- **Inteligência Artificial**: Google Gemini AI
+- **Roteamento**: React Router DOM
+- **Gerenciamento de Estado**: React Context API
+- **Backend & Infra**: Firebase (Authentication, Firestore, Cloud Functions)
+- **Inteligência Artificial**:
+  - **Google Gemini AI** (via Cloud Functions para Q&A)
+  - **OpenAI GPT** (via cliente para aprimoramento de roteiros)
 - **Linguagem**: JavaScript
 
 ## 🚀 Como Executar o Projeto Localmente
@@ -48,12 +56,18 @@ Para executar o projeto em seu ambiente de desenvolvimento, siga os passos abaix
     Crie um arquivo `.env` na raiz do projeto e adicione as chaves de configuração do seu projeto Firebase. Você pode encontrá-las no console do Firebase em `Configurações do projeto > Suas apps > Configuração do SDK`.
 
     ```env
+    # Firebase
     VITE_FIREBASE_API_KEY="SUA_API_KEY"
     VITE_FIREBASE_AUTH_DOMAIN="SEU_AUTH_DOMAIN"
     VITE_FIREBASE_PROJECT_ID="SEU_PROJECT_ID"
     VITE_FIREBASE_STORAGE_BUCKET="SEU_STORAGE_BUCKET"
     VITE_FIREBASE_MESSAGING_SENDER_ID="SEU_MESSAGING_SENDER_ID"
     VITE_FIREBASE_APP_ID="SEU_APP_ID"
+
+    # OpenAI
+    VITE_API_KEY_OPENAI="SUA_CHAVE_DE_API_DA_OPENAI"
+    VITE_API_ORG_OPENAI="SEU_ID_DE_ORGANIZACAO_DA_OPENAI"
+    VITE_API_PROJECT_OPENAI="SEU_ID_DE_PROJETO_DA_OPENAI"
     ```
 
 4.  **Execute o servidor de desenvolvimento:**

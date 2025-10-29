@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "../ui/textarea";
+import { Calendar } from "../ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Button } from "../ui/button";
+import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
+import { AlertTriangle, CalendarIcon } from "lucide-react";
 
 // --- Opções para os seletores ---
 const programsOptions = [
@@ -86,7 +92,7 @@ export function BasicInfoCard({
               Programa
             </Label>
             <Select
-              id="program"
+              inputId="program"
               options={programsOptions}
               styles={customSelectStyles}
               value={
@@ -117,7 +123,7 @@ export function BasicInfoCard({
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
             <Select
-              id="status"
+              inputId="status"
               styles={customSelectStyles}
               options={statusOptions}
               value={
@@ -160,7 +166,7 @@ export function BasicInfoCard({
           <div className="space-y-2">
             <Label htmlFor="cidade">Cidade</Label>
             <Select
-              id="cidade"
+              inputId="cidade"
               styles={customSelectStyles}
               options={cidades.map((c) => ({ value: c, label: c }))}
               value={
@@ -217,25 +223,86 @@ export function BasicInfoCard({
           {/* Data de Gravação */}
           <div className="space-y-2">
             <Label htmlFor="dataGravacao">Data da gravação</Label>
-            <Input
-              id="dataGravacao"
-              type="date"
-              value={formData.dataGravacao}
-              onChange={(e) => onFormChange("dataGravacao", e.target.value)}
-              readOnly={isReadOnly}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  id="dataGravacao"
+                  disabled={isReadOnly}
+                  className={`w-full justify-start text-left font-normal ${
+                    !formData.dataGravacao ? "text-muted-foreground" : ""
+                  }`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.dataGravacao ? (
+                    format(formData.dataGravacao, "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.dataGravacao}
+                  onSelect={(date) => onFormChange("dataGravacao", date)}
+                  disabled={isReadOnly}
+                  initialFocus
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Data de Exibição */}
           <div className="space-y-2">
             <Label htmlFor="dataExibicao">Data de exibição</Label>
-            <Input
-              id="dataExibicao"
-              type="date"
-              value={formData.dataExibicao}
-              onChange={(e) => onFormChange("dataExibicao", e.target.value)}
-              readOnly={isReadOnly}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  id="dataExibicao"
+                  disabled={isReadOnly}
+                  // Adiciona borda vermelha se houver erro
+                  className={`w-full justify-start text-left font-normal ${
+                    !formData.dataExibicao ? "text-muted-foreground" : ""
+                  } ${
+                    dateError
+                      ? "border-red-500 ring-1 ring-red-500 focus:ring-red-500"
+                      : ""
+                  }`} // <-- Estilo de erro
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.dataExibicao ? (
+                    format(formData.dataExibicao, "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.dataExibicao}
+                  onSelect={(date) => onFormChange("dataExibicao", date)}
+                  disabled={(date) =>
+                    // Garante que a comparação só ocorra se dataGravacao for uma data válida
+                    formData.dataGravacao instanceof Date &&
+                    !isNaN(formData.dataGravacao)
+                      ? date < formData.dataGravacao
+                      : false
+                  }
+                  initialFocus
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+            {/* --- EXIBE A MENSAGEM DE ERRO AQUI --- */}
+            {dateError && (
+              <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                <AlertTriangle className="h-4 w-4" /> {dateError}
+              </p>
+            )}
           </div>
 
           {/* Seção de Cancelamento Condicional */}
@@ -257,7 +324,7 @@ export function BasicInfoCard({
                       onFormChange("motivoCancelamento", e.target.value)
                     }
                     placeholder="Descreva o motivo do cancelamento"
-                    className="w-full resize-none"
+                    className="w-full resize-none "
                     readOnly={isReadOnly}
                     required
                   />
@@ -266,30 +333,48 @@ export function BasicInfoCard({
                 {/* Data do Cancelamento */}
                 <div className="space-y-2">
                   <Label
-                    htmlFor="dataCancelamento"
+                    htmlFor="dataCancelamento-popover" // Mudei htmlFor
                     className="font-semibold text-red-800"
                   >
                     Data do Cancelamento
                   </Label>
-                  <Input
-                    id="dataCancelamento"
-                    type="date"
-                    value={formData.dataCancelamento || ""}
-                    onChange={(e) =>
-                      onFormChange("dataCancelamento", e.target.value)
-                    }
-                    readOnly={isReadOnly}
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        id="dataCancelamento-popover" // Mudei ID
+                        disabled={isReadOnly}
+                        className={`w-full justify-start text-left bg-red-50 font-normal ${
+                          !formData.dataCancelamento
+                            ? "text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.dataCancelamento ? (
+                          format(formData.dataCancelamento, "PPP", {
+                            locale: ptBR,
+                          })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.dataCancelamento}
+                        onSelect={(date) =>
+                          onFormChange("dataCancelamento", date)
+                        }
+                        disabled={isReadOnly}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Mensagem de Erro */}
-          {dateError && (
-            <div className="md:col-span-2 text-red-600 text-sm font-medium">
-              {dateError}
             </div>
           )}
         </div>

@@ -111,24 +111,4 @@ const logout = async (navigate) => {
   }
 };
 
-// --- CONEXÃO COM EMULADORES ---
-// Este bloco detecta se estamos em ambiente de desenvolvimento local
-// e aponta todos os serviços do Firebase para os emuladores locais.
-// if (
-//   window.location.hostname === "localhost" ||
-//   window.location.hostname.startsWith("192.168.")
-// ) {
-//   console.log(
-//     "🔥 Ambiente de desenvolvimento. Conectando aos Emuladores do Firebase..."
-//   );
-//   try {
-//     connectAuthEmulator(auth, "http://localhost:9099");
-//     connectFirestoreEmulator(db, "localhost", 8080);
-//     connectFunctionsEmulator(functions, "localhost", 5001);
-//     console.log("✅ Emuladores conectados com sucesso!");
-//   } catch (error) {
-//     console.error("❌ Erro ao conectar aos emuladores:", error);
-//   }
-// }
-
 export { auth, db, storage, functions, signInWithGoogle, logout, getUserData };
