@@ -1,4 +1,4 @@
-"use client";
+// /src/components/Dashboard/ScriptCard.jsx
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,35 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import UserContext from "@/context/UserContext";
 import { useContext } from "react";
-
-// --- Paleta de Estilos Profissional e Sóbria ---
-const getProgramStyle = (program) => {
-  switch (program) {
-    case "Daqui":
-      return "text-indigo-600 font-bold";
-    case "Especial":
-      return "text-purple-600 font-bold";
-    default:
-      return "text-slate-600 font-bold";
-  }
-};
-
-const getStatusStyle = (status) => {
-  switch (status) {
-    case "Aprovado":
-      return "text-blue-600 fill-blue-500";
-    case "Cancelado":
-      return "text-red-600 fill-red-500";
-    case "Em Produção":
-      return "text-amber-600 fill-amber-500";
-    case "Em Revisão":
-      return "text-pink-600 fill-pink-500";
-    case "Exibido":
-      return "text-emerald-600 fill-emerald-500";
-    default:
-      return "text-slate-500 fill-slate-400";
-  }
-};
+import { getProgramStyle, getStatusStyle } from "@/lib/utils";
 
 // Componente reutilizável para itens de informação
 const InfoItem = ({ icon: Icon, children }) => (

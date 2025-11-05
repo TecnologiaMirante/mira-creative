@@ -1,3 +1,5 @@
+// /src/lib/utils.js
+
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -7,21 +9,13 @@ export function cn(...inputs) {
 
 export const getStatusClasses = (status) => {
   const statusMap = {
-    Aprovado:
-      "bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd] hover:bg-[#dbeafe]",
-    "Em Produção":
-      "bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] hover:bg-[#fef3c7]",
-    Exibido:
-      "bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7] hover:bg-[#d1fae5]",
-    "Em Revisão":
-      "bg-[#fce7f3] text-[#9d174d] border border-[#f9a8d4] hover:bg-[#fce7f3]",
-    Cancelado:
-      "bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] hover:bg-[#fee2e2]",
+    Aprovado: "border-blue-600 ",
+    "Em Produção": "border-amber-600",
+    Exibido: "border-pink-600 ",
+    "Em Revisão": "border-emerald-600 ",
+    Cancelado: "border-red-600 ",
   };
-  return (
-    statusMap[status] ||
-    "bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] hover:bg-[#f3f4f6]"
-  );
+  return statusMap[status] || "border-slate-600";
 };
 
 export const getUsersBadgeClasses = (status) => {
@@ -40,6 +34,29 @@ export const getUsersBadgeClasses = (status) => {
     statusMap[status] ||
     "bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] hover:bg-[#f3f4f6]"
   );
+};
+
+export const getProgramStyle = (program) => {
+  switch (program) {
+    case "Daqui":
+      return "text-indigo-600 border-indigo-500 fill-indigo-500";
+    case "Especial":
+      return "text-purple-600 border-purple-500 fill-purple-500";
+    default:
+      return "text-slate-600 border-slate-500 fill-slate-500";
+  }
+};
+
+export const getStatusStyle = (status) => {
+  const statusStyles = {
+    Aprovado: "text-blue-700",
+    "Em Produção": "text-amber-700",
+    "Em Revisão": "text-pink-700",
+    Exibido: "text-emerald-700",
+    Cancelado: "text-red-700",
+  };
+
+  return statusStyles[status] || "text-slate-700";
 };
 
 export const getPdfStatusColors = (status) => {

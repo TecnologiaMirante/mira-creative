@@ -1,128 +1,52 @@
 // /src/pages/Home.jsx
 
-import { Routes, Route, useNavigate, useParams } from "react-router-dom";
+import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AiChat } from "@/components/AiChat";
-import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { ScriptForm } from "@/components/Card/ScriptForm";
 import { CronogramaPage } from "@/components/CronogramaPage";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../firebase";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { Team } from "@/components/Team";
 import UserContext from "@/context/UserContext";
 import { AccessDenied } from "@/components/AccessDenied";
-
-function ScriptViewLoader() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [scriptData, setScriptData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchScript = async () => {
-      setLoading(true);
-      const scriptRef = doc(db, "pautas", id);
-      const docSnap = await getDoc(scriptRef);
-      if (docSnap.exists()) {
-        setScriptData({ id: docSnap.id, ...docSnap.data() });
-      }
-      setLoading(false);
-    };
-    if (id) fetchScript();
-  }, [id]);
-
-  if (loading) return <div className="p-8">Carregando roteiro...</div>;
-  if (!scriptData) return <div className="p-8">Roteiro não encontrado.</div>;
-
-  return (
-    <ScriptForm
-      mode="view"
-      initialData={scriptData}
-      onCancel={() => navigate("/home/dashboard")}
-    />
-  );
-}
-
-function ScriptEditLoader() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [scriptData, setScriptData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchScript = async () => {
-      setLoading(true);
-      const scriptRef = doc(db, "pautas", id);
-      const docSnap = await getDoc(scriptRef);
-      if (docSnap.exists()) {
-        setScriptData({ id: docSnap.id, ...docSnap.data() });
-      }
-      setLoading(false);
-    };
-    if (id) fetchScript();
-  }, [id]);
-
-  if (loading) return <div className="p-8">Carregando roteiro...</div>;
-  if (!scriptData) return <div className="p-8">Roteiro não encontrado.</div>;
-
-  return (
-    <ScriptForm
-      mode="edit"
-      initialData={scriptData}
-      onCancel={() => navigate("/home/dashboard")}
-      onSave={() => navigate("/home/dashboard")}
-    />
-  );
-}
+import { ProgramasListPage } from "@/components/Programas/ProgramasListPage";
+import { ProgramaDetailPage } from "@/components/Programas/ProgramaDetailPage";
+import { PautaDetailPage } from "@/components/Pautas/PautaDetailPage";
+import { PautasListPage } from "@/components/Pautas/PautasListPage";
 
 function MainContent() {
   const navigate = useNavigate();
 
-  const handleViewScript = (scriptData) => {
-    navigate(`/home/script/view/${scriptData.id}`);
-  };
-
-  const handleEditScript = (scriptData) => {
-    navigate(`/home/script/edit/${scriptData.id}`);
-  };
-
   return (
     <main className="flex-1 bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out">
       <Routes>
-        <Route
-          path="/"
-          element={
-            <DashboardPage
-              onViewScript={handleViewScript}
-              onEditScript={handleEditScript}
-            />
-          }
-        />
+        {/* --- ROTAS PRINCIPAIS --- */}
+        <Route path="/" element={<Navigate to="programas" replace />} />
         <Route
           path="/dashboard"
-          element={
-            <DashboardPage
-              onViewScript={handleViewScript}
-              onEditScript={handleEditScript}
-            />
-          }
+          element={<Navigate to="programas" replace />}
         />
+        <Route path="/programas" element={<ProgramasListPage />} />
+        <Route path="/programas/:id" element={<ProgramaDetailPage />} />
+
+        {/* --- ROTAS DE PAUTA --- */}
+        <Route path="/pautas" element={<PautasListPage />} />
         <Route
-          path="/create-script"
+          path="/pautas/create"
           element={
             <ScriptForm
               mode="create"
-              onCancel={() => navigate("/home/dashboard")}
-              onSave={() => navigate("/home/dashboard")}
+              onCancel={() => navigate("/home/pautas")}
+              onSave={() => navigate("/home/pautas")}
             />
           }
         />
-        <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/script/view/:id" element={<ScriptViewLoader />} />
-        <Route path="/script/edit/:id" element={<ScriptEditLoader />} />
+        <Route path="/pautas/:id" element={<PautaDetailPage />} />
+        <Route path="/pautas/edit/:id" element={<PautaDetailPage />} />
 
+        {/* --- OUTRAS ROTAS --- */}
+        <Route path="/ai-chat" element={<AiChat />} />
         <Route path="/schedule" element={<CronogramaPage />} />
         <Route path="/team" element={<Team />} />
       </Routes>
@@ -132,7 +56,7 @@ function MainContent() {
 
 // --- Componente Principal da Página Home ---
 export function Home() {
-  const { user: user } = useContext(UserContext);
+  const { user } = useContext(UserContext);
 
   return (
     <SidebarProvider>

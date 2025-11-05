@@ -1,3 +1,5 @@
+// /src/components/Dashboard/ScriptList.jsx
+
 import { Card } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { ScriptCard } from "./ScriptCard";

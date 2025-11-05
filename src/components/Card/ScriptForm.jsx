@@ -1,7 +1,7 @@
-// /src/components/Card/ScriptForm/index.jsx
+// /src/components/Card/ScriptForm.jsx
 
 import { useState, useEffect, useContext } from "react";
-import { db } from "../../../firebase";
+import { db, createPauta, createRoteiro } from "../../../firebase";
 import {
   collection,
   addDoc,
@@ -16,10 +16,12 @@ import { toast } from "sonner";
 import { exportScriptToPDF } from "@/lib/exportUtils";
 import { Save, ArrowLeft, Download } from "lucide-react";
 import UserContext from "@/context/UserContext";
+import { v4 as uuidv4 } from "uuid";
+import { Navigate, useNavigate } from "react-router-dom";
 
-// Estado inicial da linha AGORA COM SUGESTÕES
+// Estado inicial da linha
 const initialScriptRow = {
-  id: Date.now().toString(),
+  id: uuidv4(),
   video: "",
   texto: "",
   suggestion: { video: null, texto: null },
@@ -27,15 +29,15 @@ const initialScriptRow = {
 
 const initialState = {
   program: "Daqui",
-  produtor: "",
+  produtorId: "",
   cidade: "",
   bairro: "",
-  pauta: "",
-  apresentador: "",
+  titulo: "",
+  apresentadorId: "",
+  roteiristaId: "",
   dataGravacao: null,
   dataExibicao: null,
-  status: "",
-  scriptRows: [],
+  status: "Em Produção",
   motivoCancelamento: "",
   dataCancelamento: null,
   isVisible: true,
@@ -50,6 +52,9 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
   const [cidades, setCidades] = useState([]);
   const isReadOnly = mode === "view";
   const [dateValidationError, setDateValidationError] = useState("");
+
+  const navigate = useNavigate();
+
   // UseEffect para popular dados
   useEffect(() => {
     if ((mode === "edit" || mode === "view") && initialData) {
@@ -137,7 +142,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     setScriptRows([
       ...scriptRows,
       {
-        id: Date.now().toString(),
+        id: uuidv4(),
         video: "",
         texto: "",
         suggestion: { video: null, texto: null },
@@ -227,7 +232,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
     // Prompt para o AI Assistant
     const prompt = `
     Você é um editor de roteiros de TV sênior e colaborativo. O tema geral da matéria é "${
-      formData.pauta
+      formData.titulo
     }".
     Analise o roteiro completo a seguir, que está em formato de array de objetos JSON.
     
@@ -356,66 +361,69 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
   // Handler de envio do formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validar data
     if (dateValidationError) {
-      toast.error("Erro de Validação", {
-        description: dateValidationError, // Mostra a mesma mensagem
-        duration: 5000,
-      });
-      return; // Impede o salvamento se houver erro
+      toast.error("Erro de Validação", { description: dateValidationError });
+      return;
+    }
+    if (!user) {
+      toast.error("Você não está autenticado.");
+      return;
     }
 
     setIsLoading(true);
 
-    const dataToSave = {
-      ...formData,
-      dataGravacao: formData.dataGravacao
-        ? formData.dataGravacao.toISOString().split("T")[0]
-        : "",
-      dataExibicao: formData.dataExibicao
-        ? formData.dataExibicao.toISOString().split("T")[0]
-        : "",
-      dataCancelamento: formData.dataCancelamento
-        ? formData.dataCancelamento.toISOString().split("T")[0]
-        : "",
+    // Separar dados da Pauta e do Roteiro
+    const pautaData = {
+      program: formData.program,
+      produtorId: formData.produtorId,
+      apresentadorId: formData.apresentadorId,
+      roteiristaId: formData.roteiristaId,
+      cidade: formData.cidade,
+      bairro: formData.bairro,
+      titulo: formData.titulo,
+      dataGravacao: formData.dataGravacao,
+      dataExibicao: formData.dataExibicao,
+      status: formData.status,
+      // ... (campos de cancelamento serão tratados se o status for 'Cancelado')
+    };
+
+    const roteiroData = {
       scriptRows: scriptRows
         .filter((row) => row.video.trim() || row.texto.trim())
         .map(({ id, video, texto }) => ({ id, video, texto })),
     };
 
-    if (dataToSave.status !== "Cancelado") {
-      dataToSave.motivoCancelamento = "";
-      dataToSave.dataCancelamento = "";
-    }
-
     try {
       if (mode === "edit") {
-        const scriptDocRef = doc(db, "pautas", initialData.id);
-        await updateDoc(scriptDocRef, {
-          ...dataToSave,
-          editedAt: serverTimestamp(),
-          editedBy: user?.uid,
-        });
+        toast.error("Modo de edição ainda não refatorado.");
+        setIsLoading(false);
       } else {
-        await addDoc(collection(db, "pautas"), {
-          ...dataToSave,
-          createdAt: serverTimestamp(),
-          createdBy: user?.uid,
-          editedAt: null,
-          editedBy: null,
+        // 1. Criar o Roteiro primeiro
+        const newRoteiroId = await createRoteiro(roteiroData, user.uid);
+        if (!newRoteiroId) {
+          throw new Error("Falha ao criar o documento do roteiro.");
+        }
+
+        // 2. Criar a Pauta e vincular o ID do roteiro
+        const pautaDataCompleta = {
+          ...pautaData,
+          roteiroId: newRoteiroId,
+        };
+        const newPautaId = await createPauta(pautaDataCompleta, user.uid);
+        if (!newPautaId) {
+          throw new Error("Falha ao criar o documento da pauta.");
+        }
+
+        navigate(-1);
+        toast.success("Pauta e Roteiro criados com sucesso!", {
+          duration: 3000,
         });
+        onSave?.();
       }
-      toast.success(
-        `Roteiro ${mode === "edit" ? "editado" : "salvo"} com sucesso!`,
-        { duration: 3000 }
-      );
-      onSave?.();
     } catch (error) {
-      console.error("Erro ao salvar roteiro:", error);
-      toast.error("Falha ao salvar o roteiro.", {
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        duration: 3000,
+      console.error("Erro ao salvar:", error);
+      toast.error("Falha ao salvar.", {
+        description: error.message || "Ocorreu um erro inesperado.",
       });
     } finally {
       setIsLoading(false);
@@ -442,10 +450,10 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           <div>
             <h1 className="text-3xl font-bold">
               {mode === "edit"
-                ? "Editar Roteiro"
+                ? "Editar Pauta"
                 : mode === "view"
-                ? "Visualizar Roteiro"
-                : "Criar Novo Roteiro"}
+                ? "Visualizar Pauta"
+                : "Criar Nova Pauta"}
             </h1>
           </div>
         </div>
@@ -472,7 +480,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
           isReadOnly={isReadOnly}
           isAIAssistantLoading={isAIAssistantLoading}
           hasSuggestions={hasSuggestions}
-          pauta={formData.pauta}
+          pauta={formData.titulo}
           onAprimorar={handleAprimorarRoteiro}
           onAcceptAllSuggestions={handleAcceptAllSuggestions}
           onDeclineAllSuggestions={handleDeclineAllSuggestions}
@@ -486,7 +494,7 @@ export function ScriptForm({ onCancel, onSave, initialData, mode = "create" }) {
             </Button>
             <Button type="submit" disabled={isLoading}>
               <Save className="h-4 w-4 mr-2" />
-              {isLoading ? "Salvando..." : "Salvar Roteiro"}
+              {isLoading ? "Salvando..." : "Salvar Pauta"}{" "}
             </Button>
           </div>
         )}

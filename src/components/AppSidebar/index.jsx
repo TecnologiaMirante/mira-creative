@@ -1,3 +1,7 @@
+// /src/components/AppSidebar.js
+
+import React from "react";
+
 import {
   ChevronLeft,
   Home as HomeIcon,
@@ -86,11 +90,12 @@ const SidebarContents = () => {
   };
 
   const mainMenuItems = [
-    { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
+    // { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
+    { title: "Programas", icon: HomeIcon, id: "programas" },
     {
-      title: "Criar Roteiro",
+      title: "Pautas",
       icon: FileText,
-      id: "create-script",
+      id: "pautas",
     },
 
     {
@@ -139,13 +144,24 @@ const SidebarContents = () => {
         <SidebarMenu>
           {mainMenuItems.map((item) => (
             <SidebarMenuItem key={item.id}>
-              <Link
+              {/* <Link
                 to={`/home/${item.id}`}
                 className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
                   isCollapsed ? "justify-center" : "justify-start"
                 } ${
                   location.pathname.endsWith(item.id) ||
                   (location.pathname === "/home" && item.id === "dashboard")
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              > */}
+              <Link
+                to={`/home/${item.id}`}
+                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
+                  isCollapsed ? "justify-center" : "justify-start"
+                } ${
+                  location.pathname.startsWith(`/home/${item.id}`) ||
+                  (location.pathname === "/home" && item.id === "programas")
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}

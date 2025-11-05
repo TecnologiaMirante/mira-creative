@@ -12,6 +12,8 @@ import { Button } from "../ui/button";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { AlertTriangle, CalendarIcon } from "lucide-react";
+import { useUserCache } from "@/context/UserCacheContext";
+import { useMemo } from "react";
 
 // --- Opções para os seletores ---
 const programsOptions = [
@@ -77,6 +79,16 @@ export function BasicInfoCard({
   dateError,
   isReadOnly = false,
 }) {
+  const { userCache, isLoadingCache } = useUserCache();
+
+  const userOptions = useMemo(() => {
+    if (isLoadingCache) return [];
+    return [...userCache.values()].map((user) => ({
+      value: user.uid, // O ID do usuário
+      label: user.display_name, // O Nome do usuário
+    }));
+  }, [userCache, isLoadingCache]);
+
   return (
     <Card>
       <CardHeader>
@@ -108,12 +120,12 @@ export function BasicInfoCard({
 
           {/* Pauta */}
           <div className="space-y-2">
-            <Label htmlFor="pauta">Pauta</Label>
+            <Label htmlFor="titulo">Título da Pauta</Label>
             <Input
-              id="pauta"
-              value={formData.pauta}
-              onChange={(e) => onFormChange("pauta", e.target.value)}
-              placeholder="Descreva a pauta do roteiro"
+              id="titulo"
+              value={formData.titulo}
+              onChange={(e) => onFormChange("titulo", e.target.value)}
+              placeholder="Descreva o título da pauta"
               required
               readOnly={isReadOnly}
             />
@@ -138,27 +150,63 @@ export function BasicInfoCard({
 
           {/* Produtor */}
           <div className="space-y-2">
-            <Label htmlFor="produtor">Produtor</Label>
-            <Input
-              id="produtor"
-              value={formData.produtor}
-              onChange={(e) => onFormChange("produtor", e.target.value)}
-              placeholder="Nome do produtor"
+            <Label htmlFor="produtorId">Produtor</Label>
+            <Select
+              inputId="produtorId"
+              styles={customSelectStyles}
+              options={userOptions}
+              value={
+                userOptions.find((o) => o.value === formData.produtorId) || null
+              }
+              onChange={(selected) =>
+                onFormChange("produtorId", selected.value)
+              }
+              placeholder="Selecione o Produtor"
+              isLoading={isLoadingCache}
+              isDisabled={isReadOnly}
               required
-              readOnly={isReadOnly}
             />
           </div>
 
-          {/* Apresentador(a) */}
+          {/* Apresentador */}
           <div className="space-y-2">
-            <Label htmlFor="apresentador">Apresentador(a)</Label>
-            <Input
-              id="apresentador"
-              value={formData.apresentador}
-              onChange={(e) => onFormChange("apresentador", e.target.value)}
-              placeholder="Nome do(a) apresentador(a)"
+            <Label htmlFor="apresentadorId">Apresentador</Label>
+            <Select
+              inputId="apresentadorId"
+              styles={customSelectStyles}
+              options={userOptions}
+              value={
+                userOptions.find((o) => o.value === formData.apresentadorId) ||
+                null
+              }
+              onChange={(selected) =>
+                onFormChange("apresentadorId", selected.value)
+              }
+              placeholder="Selecione o Apresentador"
+              isLoading={isLoadingCache}
+              isDisabled={isReadOnly}
               required
-              readOnly={isReadOnly}
+            />
+          </div>
+
+          {/* Roteirista */}
+          <div className="space-y-2">
+            <Label htmlFor="roteiristaId">Roteirista</Label>
+            <Select
+              inputId="roteiristaId"
+              styles={customSelectStyles}
+              options={userOptions}
+              value={
+                userOptions.find((o) => o.value === formData.roteiristaId) ||
+                null
+              }
+              onChange={(selected) =>
+                onFormChange("roteiristaId", selected.value)
+              }
+              placeholder="Selecione o Roteirista"
+              isLoading={isLoadingCache}
+              isDisabled={isReadOnly}
+              required
             />
           </div>
 
