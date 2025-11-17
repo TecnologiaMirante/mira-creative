@@ -13,7 +13,8 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { AlertTriangle, CalendarIcon } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Switch } from "../ui/switch";
 
 // --- Opções para os seletores ---
 const programsOptions = [
@@ -23,10 +24,10 @@ const programsOptions = [
 
 const statusOptions = [
   { value: "Aprovado", label: "Aprovado" },
-  { value: "Cancelado", label: "Cancelado" },
   { value: "Em Produção", label: "Em Produção" },
-  { value: "Em Revisão", label: "Em Revisão" },
   { value: "Exibido", label: "Exibido" },
+  { value: "Em Revisão", label: "Em Revisão" },
+  { value: "Cancelado", label: "Cancelado" },
 ];
 
 const customSelectStyles = {
@@ -79,15 +80,76 @@ export function BasicInfoCard({
   dateError,
   isReadOnly = false,
 }) {
-  const { userCache, isLoadingCache } = useUserCache();
+  const { userCache, isLoadingCache = true } = useUserCache() || {};
+  const [isRangeMode, setIsRangeMode] = useState(
+    () => !!formData.dataGravacaoFim
+  );
+
+  useEffect(() => {
+    setIsRangeMode(!!formData.dataGravacaoFim);
+  }, [formData.dataGravacaoFim]);
+
+  const selectedDate = useMemo(() => {
+    if (isRangeMode) {
+      return {
+        from: formData.dataGravacaoInicio || null,
+        to: formData.dataGravacaoFim || null,
+      };
+    }
+    return formData.dataGravacaoInicio || null;
+  }, [formData.dataGravacaoInicio, formData.dataGravacaoFim, isRangeMode]);
 
   const userOptions = useMemo(() => {
-    if (isLoadingCache) return [];
+    if (isLoadingCache || !userCache) return []; // Proteção contra 'undefined'
     return [...userCache.values()].map((user) => ({
-      value: user.uid, // O ID do usuário
-      label: user.display_name, // O Nome do usuário
+      value: user.uid,
+      label: user.display_name,
     }));
   }, [userCache, isLoadingCache]);
+
+  const handleDateSelect = (value) => {
+    if (isRangeMode) {
+      onFormChange("dataGravacao", {
+        from: value?.from || null,
+        to: value?.to || null,
+      });
+    } else {
+      onFormChange("dataGravacao", value || null);
+    }
+  };
+
+  const handleRangeToggle = (isRange) => {
+    setIsRangeMode(isRange);
+    onFormChange("dataGravacao", null); // Limpa as datas
+  };
+
+  const renderLabel = () => {
+    const inicio = formData.dataGravacaoInicio;
+    const fim = formData.dataGravacaoFim;
+
+    if (!inicio) return "Selecione uma data";
+
+    // As datas aqui já são objetos Date, pois a PautaDetailPage as formatou
+    if (isRangeMode && inicio && fim) {
+      return (
+        <>
+          {format(inicio, "PPP", { locale: ptBR })} —{" "}
+          {format(fim, "PPP", { locale: ptBR })}
+        </>
+      );
+    }
+    if (inicio) {
+      // Cobre 'range' com só uma data E 'single'
+      return format(inicio, "PPP", { locale: ptBR });
+    }
+    return "Selecione uma data";
+  };
+
+  const handleTimeChange = (field, value) => {
+    // Garante que o valor tenha 2 dígitos (ex: "5" -> "05")
+    const formattedValue = value.padStart(2, "0");
+    onFormChange(field, formattedValue);
+  };
 
   return (
     <Card>
@@ -270,33 +332,43 @@ export function BasicInfoCard({
 
           {/* Data de Gravação */}
           <div className="space-y-2">
-            <Label htmlFor="dataGravacao">Data da gravação</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="dataGravacao">Data da gravação</Label>
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>Única</span>
+                <Switch
+                  checked={isRangeMode}
+                  onCheckedChange={handleRangeToggle}
+                  disabled={isReadOnly}
+                />
+                <span>Intervalo</span>
+              </div>
+            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  variant={"outline"}
+                  variant="outline"
                   id="dataGravacao"
                   disabled={isReadOnly}
                   className={`w-full justify-start text-left font-normal ${
-                    !formData.dataGravacao ? "text-muted-foreground" : ""
+                    !selectedDate?.from && !selectedDate
+                      ? "text-muted-foreground"
+                      : ""
                   }`}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.dataGravacao ? (
-                    format(formData.dataGravacao, "PPP", { locale: ptBR })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
+                  {renderLabel()}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
-                  mode="single"
-                  selected={formData.dataGravacao}
-                  onSelect={(date) => onFormChange("dataGravacao", date)}
+                  mode={isRangeMode ? "range" : "single"}
+                  selected={selectedDate}
+                  onSelect={handleDateSelect} // <-- Corrigido
                   disabled={isReadOnly}
                   initialFocus
                   locale={ptBR}
+                  numberOfMonths={isRangeMode ? 2 : 1}
                 />
               </PopoverContent>
             </Popover>
@@ -311,14 +383,9 @@ export function BasicInfoCard({
                   variant={"outline"}
                   id="dataExibicao"
                   disabled={isReadOnly}
-                  // Adiciona borda vermelha se houver erro
                   className={`w-full justify-start text-left font-normal ${
                     !formData.dataExibicao ? "text-muted-foreground" : ""
-                  } ${
-                    dateError
-                      ? "border-red-500 ring-1 ring-red-500 focus:ring-red-500"
-                      : ""
-                  }`} // <-- Estilo de erro
+                  } ${dateError ? "border-red-500 ..." : ""}`}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.dataExibicao ? (
@@ -334,23 +401,56 @@ export function BasicInfoCard({
                   selected={formData.dataExibicao}
                   onSelect={(date) => onFormChange("dataExibicao", date)}
                   disabled={(date) =>
-                    // Garante que a comparação só ocorra se dataGravacao for uma data válida
-                    formData.dataGravacao instanceof Date &&
-                    !isNaN(formData.dataGravacao)
-                      ? date < formData.dataGravacao
-                      : false
+                    (formData.dataGravacaoInicio instanceof Date &&
+                      !isNaN(formData.dataGravacaoInicio) &&
+                      date < formData.dataGravacaoInicio) ||
+                    isReadOnly
                   }
                   initialFocus
                   locale={ptBR}
                 />
               </PopoverContent>
             </Popover>
-            {/* --- EXIBE A MENSAGEM DE ERRO AQUI --- */}
             {dateError && (
-              <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+              <p className="mt-1.5 ...">
                 <AlertTriangle className="h-4 w-4" /> {dateError}
               </p>
             )}
+          </div>
+
+          {/* Tempo de reprodução */}
+          <div className="space-y-2">
+            <Label htmlFor="duracaoMinutos">Duração da Pauta (mm:ss)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="duracaoMinutos"
+                type="number"
+                placeholder="mm"
+                value={formData.duracaoMinutos || ""}
+                onChange={(e) => onFormChange("duracaoMinutos", e.target.value)}
+                onBlur={(e) =>
+                  handleTimeChange("duracaoMinutos", e.target.value)
+                } // Formata ao sair
+                className="w-20 text-center"
+                readOnly={isReadOnly}
+              />
+              <span className="font-bold text-slate-500">:</span>
+              <Input
+                id="duracaoSegundos"
+                type="number"
+                placeholder="ss"
+                value={formData.duracaoSegundos || ""}
+                onChange={(e) =>
+                  onFormChange("duracaoSegundos", e.target.value)
+                }
+                onBlur={(e) =>
+                  handleTimeChange("duracaoSegundos", e.target.value)
+                } // Formata ao sair
+                max={59} // Segundos não podem passar de 59
+                className="w-20 text-center"
+                readOnly={isReadOnly}
+              />
+            </div>
           </div>
 
           {/* Seção de Cancelamento Condicional */}

@@ -16,6 +16,7 @@ import {
   User,
   Trash2,
   Edit,
+  Clock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -29,7 +30,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { getProgramStyle, getStatusStyle } from "@/lib/utils";
+import {
+  calcularDuracaoTotal,
+  convertTimestamp,
+  getProgramStyle,
+  getStatusStyle,
+} from "@/lib/utils";
 import { useUserCache } from "@/context/UserCacheContext";
 
 const InfoItem = ({ icon: Icon, children }) => (
@@ -51,19 +57,16 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-function convertTimestamp(timestamp) {
-  if (!timestamp) return "Não definida";
-  try {
-    const date = timestamp.toDate ? timestamp.toDate() : timestamp;
-    return date.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch (e) {
-    console.error("Erro ao converter data:", e, timestamp);
-    return "Data inválida";
+function formatSegundos(totalSegundos) {
+  if (!totalSegundos || totalSegundos < 0) {
+    return "00:00";
   }
+  const minutos = Math.floor(totalSegundos / 60);
+  const segundos = totalSegundos % 60;
+  return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 // --- Card Principal ---
@@ -112,6 +115,13 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
               <p>
                 <span className="font-semibold text-slate-700">Pautas: </span>
                 {programa.pautaCount ?? 0} no espelho
+              </p>
+            </InfoItem>
+            {/* DURAÇÃO */}
+            <InfoItem icon={Clock}>
+              <p>
+                <span className="font-semibold text-slate-700">Duração: </span>
+                {formatSegundos(programa.duracaoTotalSegundos)}{" "}
               </p>
             </InfoItem>
 

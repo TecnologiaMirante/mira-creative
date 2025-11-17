@@ -19,27 +19,7 @@ import { toast } from "sonner";
 import { updatePrograma } from "../../../firebase";
 import UserContext from "@/context/UserContext";
 import { useUserCache } from "@/context/UserCacheContext";
-
-const customStyles = {
-  content: {
-    top: "50%",
-    left: "50%",
-    right: "auto",
-    bottom: "auto",
-    transform: "translate(-50%, -50%)",
-    width: "90%",
-    maxWidth: "500px",
-    maxHeight: "90vh",
-    borderRadius: "0.5rem",
-    padding: "0",
-    border: "none",
-    boxShadow:
-      "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  },
-  overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-};
+import { customStylesModal } from "@/lib/utils";
 
 const programsOptions = [
   { value: "Daqui", label: "Daqui" },
@@ -47,8 +27,10 @@ const programsOptions = [
 ];
 
 const statusOptions = [
+  { value: "Aprovado", label: "Aprovado" },
   { value: "Em Produção", label: "Em Produção" },
   { value: "Exibido", label: "Exibido" },
+  { value: "Em Revisão", label: "Em Revisão" },
   { value: "Cancelado", label: "Cancelado" },
 ];
 
@@ -127,7 +109,7 @@ export function EditarProgramaModal({
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
-      style={customStyles}
+      style={customStylesModal}
       contentLabel="Editar Programa"
       ariaHideApp={false}
     >

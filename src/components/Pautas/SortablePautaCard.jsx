@@ -3,7 +3,7 @@
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { PautaCard } from "./PautaCard";
+import { PautaCardList } from "./PautaCardList";
 
 export function SortablePautaCard(props) {
   const {
@@ -24,7 +24,7 @@ export function SortablePautaCard(props) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <PautaCard
+      <PautaCardList
         {...props} // Passa as props (pauta, onView, onEdit, onRemove)
         dndAttributes={attributes}
         dndListeners={listeners}

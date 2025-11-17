@@ -20,12 +20,15 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  onSnapshot,
   where,
   arrayRemove,
   arrayUnion,
+  increment,
 } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 import { getStorage } from "firebase/storage";
+import { toast } from "sonner";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -120,22 +123,33 @@ const signInWithGoogle = async () => {
 };
 
 // GET de todos os programas
-const getProgramas = async () => {
+const listenToProgramas = (onDataChange) => {
   try {
-    const q = query(
+    let q = query(
       collection(db, "programas"),
-      where("isVisible", "==", true),
-      orderBy("dataExibicao", "desc")
+      where("isVisible", "==", true), // Apenas programas ativos
+      orderBy("dataExibicao", "desc") // Os mais novos primeiro
     );
-    const querySnapshot = await getDocs(q);
-    const programas = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return programas;
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const programas = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        onDataChange(programas);
+      },
+      (error) => {
+        console.error("Erro ao escutar programas: ", error);
+        toast.error("Erro ao carregar programas.");
+      }
+    );
+
+    return unsubscribe; // Retorna a função para "desligar" o ouvinte
   } catch (error) {
-    console.error("Erro ao buscar programas: ", error);
-    return [];
+    console.error("Erro ao criar query de programas: ", error);
+    return () => {};
   }
 };
 
@@ -296,16 +310,29 @@ const updateEspelhoPautas = async (espelhoId, novoArrayDePautas) => {
 };
 
 // REMOVE UMA PAUTA DO ARRAY 'pautasOrdenadas' DO ESPELHO
-const removePautaFromEspelho = async (espelhoId, pautaId) => {
+const removePautaFromEspelho = async (espelhoId, pauta, programaId) => {
   try {
     const espelhoRef = doc(db, "espelhos", espelhoId);
-    await updateDoc(espelhoRef, {
-      pautasOrdenadas: arrayRemove(pautaId),
-    });
-    const pautaRef = doc(db, "pautas", pautaId);
-    await updateDoc(pautaRef, {
-      espelhoId: null,
-    });
+    const pautaRef = doc(db, "pautas", pauta.id);
+    const programaRef = doc(db, "programas", programaId);
+
+    // Calcula a duração em segundos da pauta que está sendo removida
+    const minutos = parseInt(pauta.duracaoMinutos, 10) || 0;
+    const segundos = parseInt(pauta.duracaoSegundos, 10) || 0;
+    const duracaoEmSegundos = minutos * 60 + segundos;
+
+    await Promise.all([
+      updateDoc(espelhoRef, {
+        pautasOrdenadas: arrayRemove(pauta.id),
+      }),
+      updateDoc(pautaRef, {
+        espelhoId: null,
+      }),
+      updateDoc(programaRef, {
+        pautaCount: increment(-1),
+        duracaoTotalSegundos: increment(-duracaoEmSegundos), // <-- ATUALIZA A DURAÇÃO
+      }),
+    ]);
     return true;
   } catch (error) {
     console.error("Erro ao remover pauta do espelho: ", error);
@@ -314,17 +341,29 @@ const removePautaFromEspelho = async (espelhoId, pautaId) => {
 };
 
 // ADICIONA UMA PAUTA AO ARRAY 'pautasOrdenadas' DO ESPELHO
-const addPautaToEspelho = async (espelhoId, pautaId) => {
+const addPautaToEspelho = async (espelhoId, pauta, programaId) => {
   try {
     const espelhoRef = doc(db, "espelhos", espelhoId);
-    await updateDoc(espelhoRef, {
-      pautasOrdenadas: arrayUnion(pautaId),
-    });
-    // E "setar" o espelhoId na pauta
-    const pautaRef = doc(db, "pautas", pautaId);
-    await updateDoc(pautaRef, {
-      espelhoId: espelhoId,
-    });
+    const pautaRef = doc(db, "pautas", pauta.id);
+    const programaRef = doc(db, "programas", programaId);
+
+    // Calcula a duração em segundos da pauta que está sendo adicionada
+    const minutos = parseInt(pauta.duracaoMinutos, 10) || 0;
+    const segundos = parseInt(pauta.duracaoSegundos, 10) || 0;
+    const duracaoEmSegundos = minutos * 60 + segundos;
+
+    await Promise.all([
+      updateDoc(espelhoRef, {
+        pautasOrdenadas: arrayUnion(pauta.id),
+      }),
+      updateDoc(pautaRef, {
+        espelhoId: espelhoId,
+      }),
+      updateDoc(programaRef, {
+        pautaCount: increment(1),
+        duracaoTotalSegundos: increment(duracaoEmSegundos), // <-- ATUALIZA A DURAÇÃO
+      }),
+    ]);
     return true;
   } catch (error) {
     console.error("Erro ao adicionar pauta ao espelho: ", error);
@@ -371,22 +410,34 @@ const getPauta = async (id) => {
   }
 };
 
-const getAllVisiblePautas = async () => {
+// GET de todos as pautas
+const listenToPautas = (onDataChange) => {
   try {
     const q = query(
       collection(db, "pautas"),
-      where("isVisible", "==", true),
-      orderBy("createdAt", "desc")
+      where("isVisible", "==", true), // Apenas pautas ativas
+      orderBy("createdAt", "desc") // As mais novas primeiro
     );
-    const querySnapshot = await getDocs(q);
-    const pautas = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return pautas;
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const pautas = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        onDataChange(pautas);
+      },
+      (error) => {
+        console.error("Erro ao escutar pautas: ", error);
+        toast.error("Erro ao carregar pautas.");
+      }
+    );
+
+    return unsubscribe; // Retorna a função para "desligar" o ouvinte
   } catch (error) {
-    console.error("Erro ao buscar todas as pautas: ", error);
-    return [];
+    console.error("Erro ao criar query de pautas: ", error);
+    return () => {};
   }
 };
 
@@ -488,6 +539,48 @@ const updateRoteiro = async (roteiroId, newScriptRows, userId) => {
   }
 };
 
+/**
+ * ADICIONA UM E-MAIL À FILA DE NOTIFICAÇÕES
+ */
+// const enviarNotificacao = async (
+//   destinatarioEmail,
+//   tituloPauta,
+//   linkPauta,
+//   papel
+// ) => {
+//   try {
+//     // 1. O URL que você copiou do Pipedream
+//     const WEBHOOK_URL = "https://eohs4z2pchccj0t.m.pipedream.net";
+
+//     const remetenteNome = auth.currentUser?.displayName || "Sistema";
+
+//     // 2. Os dados que queremos enviar para o Pipedream
+//     const emailData = {
+//       to: destinatarioEmail,
+//       subject: `Nova atribuição de pauta: ${tituloPauta}`,
+//       body: `
+//         <p>Olá!</p>
+//         <p>${remetenteNome} atribuiu-lhe a função de <strong>${papel}</strong> na pauta:</p>
+//         <p><strong>${tituloPauta}</strong></p>
+//         <p><a href="${linkPauta}">Clique aqui para ver a pauta.</a></p>
+//       `,
+//     };
+
+//     // 3. A chamada HTTP (Fetch)
+//     // (Não precisa de 'await' se não quisermos esperar pela resposta)
+//     fetch(WEBHOOK_URL, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(emailData),
+//     });
+//   } catch (error) {
+//     // Como isto é uma notificação, não precisamos de parar o utilizador
+//     console.error("Erro ao enviar notificação (webhook):", error);
+//   }
+// };
+
 // Função de Logout
 const logout = async (navigate) => {
   try {
@@ -505,9 +598,8 @@ export {
   storage,
   functions,
   signInWithGoogle,
-  logout,
   getUserData,
-  getProgramas,
+  listenToProgramas,
   getPrograma,
   createPrograma,
   updatePrograma,
@@ -521,10 +613,12 @@ export {
   getPautas,
   getPauta,
   createPauta,
-  getAllVisiblePautas,
+  listenToPautas,
   updatePauta,
   deletePauta,
   getRoteiro,
   createRoteiro,
   updateRoteiro,
+  // enviarNotificacao,
+  logout,
 };

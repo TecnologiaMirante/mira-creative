@@ -6,29 +6,8 @@ import { getPautas } from "../../../firebase"; // Função que já criamos
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
-
-// Estilos do Modal (copiado do seu AppSidebar.js para consistência)
-const customStyles = {
-  content: {
-    top: "50%",
-    left: "50%",
-    right: "auto",
-    bottom: "auto",
-    transform: "translate(-50%, -50%)",
-    width: "90%",
-    maxWidth: "600px", // Um pouco maior para a lista
-    height: "auto",
-    maxHeight: "90vh",
-    borderRadius: "0.5rem",
-    padding: "0", // Vamos controlar o padding
-    border: "none",
-    boxShadow:
-      "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  },
-  overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-};
+import { customStylesModal } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 // Um item da lista de pautas
 function PautaDisponivelItem({ pauta, onAdd, isAdding }) {
@@ -62,6 +41,7 @@ export function AdicionarPautaModal({
   pautasAtuais,
   onPautaAdded,
 }) {
+  const navigate = useNavigate();
   const [pautasDisponiveis, setPautasDisponiveis] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(null);
@@ -93,11 +73,16 @@ export function AdicionarPautaModal({
     setIsAdding(null);
   };
 
+  const handleNavigateToCreate = () => {
+    onClose();
+    navigate("/home/pautas/create");
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
-      style={customStyles}
+      style={customStylesModal}
       contentLabel="Adicionar Pauta ao Espelho"
       ariaHideApp={false}
     >
@@ -141,7 +126,17 @@ export function AdicionarPautaModal({
         </div>
 
         {/* Rodapé */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+          {/* Botão de Criar Novo (SECUNDÁRIO) */}
+          <Button
+            variant="link"
+            className="p-0 h-auto text-sm text-blue-600 hover:text-blue-800"
+            onClick={handleNavigateToCreate}
+          >
+            Ou cadastre uma nova pauta
+          </Button>
+
+          {/* Botão de Fechar (PRIMÁRIO no rodapé) */}
           <Button variant="outline" onClick={onClose}>
             Fechar
           </Button>

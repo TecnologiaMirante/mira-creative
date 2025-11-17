@@ -33,6 +33,7 @@ import { Logout } from "../../components/Logout";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { auth } from "../../../firebase";
 import { signOut } from "firebase/auth";
+import { customStylesModal } from "@/lib/utils";
 
 const firebaseLogout = async () => {
   await signOut(auth);
@@ -72,22 +73,6 @@ const SidebarContents = () => {
   function closeModal() {
     setModalIsOpen(false);
   }
-
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      transform: "translate(-50%, -50%)",
-      width: "90%",
-      maxWidth: "400px",
-      height: "auto",
-      maxHeight: "90vh",
-      borderRadius: "0.5rem",
-      padding: "1rem",
-    },
-  };
 
   const mainMenuItems = [
     // { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
@@ -248,7 +233,7 @@ const SidebarContents = () => {
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        style={customStyles}
+        style={customStylesModal}
         contentLabel="Menu"
         shouldCloseOnOverlayClick={false}
         ariaHideApp={false}

@@ -37,8 +37,8 @@ function MainContent() {
           element={
             <ScriptForm
               mode="create"
-              onCancel={() => navigate("/home/pautas")}
-              onSave={() => navigate("/home/pautas")}
+              onCancel={() => navigate(-1)}
+              onSave={() => navigate(-1)}
             />
           }
         />

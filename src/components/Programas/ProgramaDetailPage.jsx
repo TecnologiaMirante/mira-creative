@@ -1,6 +1,6 @@
 // /src/components/programas/ProgramaDetailPage.jsx
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getPrograma,
@@ -13,8 +13,15 @@ import {
 } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { SortablePautaCard } from "../pautas/SortablePautaCard";
-import { AdicionarPautaModal } from "../pautas/AdicionarPautaModal"; // 2. IMPORTE O MODAL
-import { FileText, Plus, Save } from "lucide-react";
+import { AdicionarPautaModal } from "../pautas/AdicionarPautaModal";
+import {
+  FileText,
+  Plus,
+  Save,
+  Clock,
+  CalendarIcon,
+  Circle,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +37,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
-import { getStatusStyle } from "@/lib/utils";
-import UserContext from "@/context/UserContext"; // 3. IMPORTE O UserContext
+import {
+  convertTimestamp,
+  getStatusStyle,
+  calcularDuracaoTotal,
+} from "@/lib/utils";
+import UserContext from "@/context/UserContext";
 
 export function ProgramaDetailPage() {
   const { id: programaId } = useParams();
@@ -45,6 +56,7 @@ export function ProgramaDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingEspelho, setIsCreatingEspelho] = useState(false);
+  const duracaoTotal = useMemo(() => calcularDuracaoTotal(pautas), [pautas]);
 
   // Sensor para D&D (para não ativar ao clicar em botões)
   const sensors = useSensors(
@@ -98,17 +110,91 @@ export function ProgramaDetailPage() {
   };
 
   const handleRemovePauta = async (pautaId) => {
-    if (!espelho) return;
+    if (!espelho || !programa) return;
+
+    // 1. Encontre o objeto 'pauta' completo
+    const pautaParaRemover = pautas.find((p) => p.id === pautaId);
+    if (!pautaParaRemover) return;
+
     setIsSaving(true);
-    const success = await removePautaFromEspelho(espelho.id, pautaId);
+
+    // 2. Passe o objeto 'pauta' inteiro
+    const success = await removePautaFromEspelho(
+      espelho.id,
+      pautaParaRemover,
+      programa.id
+    );
+
     if (success) {
-      // Atualiza o estado local
       setPautas((prevPautas) => prevPautas.filter((p) => p.id !== pautaId));
+      setPrograma((prev) => ({
+        ...prev,
+        pautaCount: prev.pautaCount - 1,
+        // Atualiza a duração localmente
+        duracaoTotalSegundos:
+          (prev.duracaoTotalSegundos || 0) -
+          ((parseInt(pautaParaRemover.duracaoMinutos, 10) || 0) * 60 +
+            (parseInt(pautaParaRemover.duracaoSegundos, 10) || 0)),
+      }));
       toast.success("Pauta removida do espelho.");
     } else {
       toast.error("Erro ao remover pauta.");
     }
     setIsSaving(false);
+  };
+
+  const handlePautaAdded = async (pautaId) => {
+    if (!espelho || !programa) return;
+
+    // 1. Busque o objeto 'pauta' completo
+    const pautasData = await getPautasByIds([pautaId]);
+    if (pautasData.length === 0) {
+      toast.error("Erro ao buscar dados da pauta.");
+      return;
+    }
+    const pautaParaAdicionar = pautasData[0];
+
+    // 2. Passe o objeto 'pauta' inteiro
+    const success = await addPautaToEspelho(
+      espelho.id,
+      pautaParaAdicionar,
+      programa.id
+    );
+
+    if (success) {
+      setPautas((prevPautas) => [...prevPautas, pautaParaAdicionar]);
+      setPrograma((prev) => ({
+        ...prev,
+        pautaCount: (prev.pautaCount || 0) + 1,
+        // Atualiza a duração localmente
+        duracaoTotalSegundos:
+          (prev.duracaoTotalSegundos || 0) +
+          ((parseInt(pautaParaAdicionar.duracaoMinutos, 10) || 0) * 60 +
+            (parseInt(pautaParaAdicionar.duracaoSegundos, 10) || 0)),
+      }));
+      toast.success("Pauta adicionada ao espelho!");
+    } else {
+      toast.error("Erro ao adicionar pauta.");
+    }
+  };
+
+  const handleCreateEspelho = async () => {
+    if (!programa || !user) {
+      toast.error("Erro: Programa ou usuário não carregado.");
+      return;
+    }
+    setIsCreatingEspelho(true);
+
+    const newEspelhoData = await createEspelho(programa.id, user.uid);
+
+    if (newEspelhoData) {
+      setEspelho(newEspelhoData);
+      setPrograma((prev) => ({ ...prev, espelhoId: newEspelhoData.id }));
+      toast.success("Espelho criado com sucesso!");
+    } else {
+      toast.error("Falha ao criar o espelho.");
+    }
+    setIsCreatingEspelho(false);
   };
 
   const handleDragEnd = async (event) => {
@@ -129,56 +215,6 @@ export function ProgramaDetailPage() {
     }
   };
 
-  const handlePautaAdded = async (pautaId) => {
-    if (!espelho) return;
-
-    const success = await addPautaToEspelho(espelho.id, pautaId);
-
-    if (success) {
-      const pautasData = await getPautasByIds([pautaId]);
-      if (pautasData.length > 0) {
-        setPautas((prevPautas) => [...prevPautas, pautasData[0]]);
-        toast.success("Pauta adicionada ao espelho!");
-      }
-    } else {
-      toast.error("Erro ao adicionar pauta.");
-    }
-  };
-
-  const handleCreateEspelho = async () => {
-    if (!programa || !user) {
-      toast.error("Erro: Programa ou usuário não carregado.");
-      return;
-    }
-
-    setIsCreatingEspelho(true);
-
-    const newEspelhoData = await createEspelho(programa.id, user.uid);
-
-    if (newEspelhoData) {
-      setEspelho(newEspelhoData); // Atualiza o estado para mostrar o espelho vazio
-      setPrograma((prev) => ({ ...prev, espelhoId: newEspelhoData.id }));
-      toast.success("Espelho criado com sucesso!");
-    } else {
-      toast.error("Falha ao criar o espelho.");
-    }
-    setIsCreatingEspelho(false);
-  };
-
-  function convertTimestamp(timestamp) {
-    if (!timestamp) return "Não definida";
-    try {
-      const date = timestamp.toDate();
-      return date.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch (e) {
-      return "Data inválida";
-    }
-  }
-
   if (isLoading) {
     return <LoadingOverlay message={"Carregando espelho..."} success={false} />;
   }
@@ -198,7 +234,7 @@ export function ProgramaDetailPage() {
               Nenhum espelho criado
             </h3>
             <p className="text-muted-foreground mb-4">
-              Este programa ainda não possui um espelho.
+              Este programa ainda não possui um espelho
             </p>
             <Button
               onClick={handleCreateEspelho}
@@ -218,6 +254,16 @@ export function ProgramaDetailPage() {
     );
   }
 
+  const StatusBadge = ({ status }) => {
+    const style = getStatusStyle(status);
+    return (
+      <div className="flex items-center gap-2">
+        <Circle className={`h-2 w-2 ${style}`} />
+        <p className={`font-semibold ${style}`}>{status || "Status N/D"}</p>
+      </div>
+    );
+  };
+
   const statusStyle = getStatusStyle(programa?.status);
 
   // 8. Renderização principal (com DndContext)
@@ -228,35 +274,77 @@ export function ProgramaDetailPage() {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="p-8 space-y-6">
+        <div className="p-8 space-y-4">
           {/* Cabeçalho com botões */}
-          <div className="flex flex-wrap gap-4 justify-between items-center">
+          <div className="flex flex-wrap gap-4 justify-between items-start">
+            {/* Títulos e Infos */}
             <div className="space-y-2">
               <h1 className="text-4xl font-bold">
-                Espelho: {programa?.nome || "Programa"} -{" "}
-                {convertTimestamp(programa?.dataExibicao)} -{" "}
-                <span className={statusStyle}>{programa?.status}</span>
+                Espelho:{" "}
+                <span className="text-indigo-600">
+                  {programa?.nome || "Programa"}
+                </span>
               </h1>
-              <p className="text-lg text-muted-foreground">
-                {pautas.length} pauta(s) no espelho. Arraste para reordenar.
-              </p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+                {/* Data de Exibição */}
+                <div className="flex items-center gap-1.5">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{convertTimestamp(programa?.dataExibicao)}</span>
+                </div>
+                {/* Status */}
+                <div className="flex items-center">
+                  <StatusBadge status={programa?.status} />
+                </div>
+                {/* Contagem de Pautas */}
+                <div className="flex items-center gap-1.5">
+                  <FileText className="h-4 w-4" />
+                  <span>{programa?.pautaCount ?? pautas.length} pauta(s)</span>
+                </div>
+                {/* Duração Total */}
+                <div className="flex items-center gap-1.5 font-medium text-slate-600">
+                  <Clock className="h-4 w-4" />
+                  <span>Duração: {duracaoTotal}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-2">
+
+            {/* Botões de Ação */}
+            <div className="flex gap-2 items-center shrink-0">
+              {/* Botão de "Salvando..." (só aparece quando está salvando) */}
+              {isSaving && (
+                <Button
+                  variant="outline"
+                  disabled
+                  className="gap-2 cursor-wait"
+                >
+                  <Save className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </Button>
+              )}
+              {/* Botão de Adicionar */}
               <Button
                 className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
                 onClick={() => setIsModalOpen(true)}
               >
-                <Plus />
-                Adicionar Pauta
+                <Plus className="h-4 w-4 text-white" />
+                <span className="font-semibold">Adicionar Pauta</span>
               </Button>
-              {isSaving && (
-                <Button variant="outline" disabled>
-                  <Save className="h-4 w-4 mr-2 animate-spin" />
-                  Salvando...
-                </Button>
-              )}
+              {/* Botão de Cadastrar */}
+              <Button
+                variant="outline"
+                onClick={() => navigate("/home/pautas/create")}
+                className="gap-2 bg-white hover:text-blue-700 px-2 text-base text-blue-600"
+              >
+                <Plus className="h-4 w-4 text-blue-600" />
+
+                <span className="font-semibold">Cadastrar Pauta</span>
+              </Button>
             </div>
           </div>
+
+          <p className="text-muted-foreground">
+            Arraste as pautas para reordenar o espelho.
+          </p>
 
           {/* Lista de Pautas (com D&D) */}
           <SortableContext
@@ -271,7 +359,7 @@ export function ProgramaDetailPage() {
                     Nenhuma pauta no espelho
                   </h3>
                   <p className="text-muted-foreground">
-                    Clique em "Adicionar Pauta" para começar.
+                    Clique em "Adicionar Pauta" para começar
                   </p>
                 </div>
               </Card>
@@ -284,7 +372,7 @@ export function ProgramaDetailPage() {
                     programaNome={programa.nome}
                     onView={handleViewPauta}
                     onEdit={handleEditPauta}
-                    onRemove={handleRemovePauta} // Passe o handler de remover
+                    onRemove={handleRemovePauta}
                   />
                 ))}
               </div>

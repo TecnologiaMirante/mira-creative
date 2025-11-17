@@ -42,7 +42,11 @@ export const UserCacheProvider = ({ children }) => {
 
   return (
     <UserCacheContext.Provider
-      value={{ getUserById, isLoadingCache: isLoading, userCache }}
+      value={{
+        getUserById,
+        isLoadingCache: isLoading,
+        userCache,
+      }}
     >
       {children}
     </UserCacheContext.Provider>

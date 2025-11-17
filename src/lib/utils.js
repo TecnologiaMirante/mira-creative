@@ -11,8 +11,8 @@ export const getStatusClasses = (status) => {
   const statusMap = {
     Aprovado: "border-blue-600 ",
     "Em Produção": "border-amber-600",
-    Exibido: "border-pink-600 ",
-    "Em Revisão": "border-emerald-600 ",
+    "Em Revisão": "border-pink-600 ",
+    Exibido: "border-emerald-600 ",
     Cancelado: "border-red-600 ",
   };
   return statusMap[status] || "border-slate-600";
@@ -106,4 +106,55 @@ export function convertDate(date) {
   const d = new Date(date);
   if (isNaN(d.getTime())) return "N/A";
   return d.toLocaleDateString("pt-BR");
+}
+
+export function convertTimestamp(timestamp) {
+  if (!timestamp) return "Não definida";
+  try {
+    const date = timestamp.toDate();
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch (e) {
+    return "Data inválida";
+  }
+}
+
+export const customStylesModal = {
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    transform: "translate(-50%, -50%)",
+    width: "90%",
+    maxWidth: "400px",
+    height: "auto",
+    maxHeight: "90vh",
+    borderRadius: "0.5rem",
+    padding: "1rem",
+  },
+};
+
+export function calcularDuracaoTotal(pautas) {
+  let totalSegundos = 0;
+
+  pautas.forEach((pauta) => {
+    const minutos = parseInt(pauta.duracaoMinutos, 10) || 0;
+    const segundos = parseInt(pauta.duracaoSegundos, 10) || 0;
+    totalSegundos += minutos * 60 + segundos;
+  });
+
+  if (totalSegundos === 0) {
+    return "00:00";
+  }
+
+  const minutosFinais = Math.floor(totalSegundos / 60);
+  const segundosFinais = totalSegundos % 60;
+
+  return `${String(minutosFinais).padStart(2, "0")}:${String(
+    segundosFinais
+  ).padStart(2, "0")}`;
 }
