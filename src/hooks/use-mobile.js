@@ -1,3 +1,5 @@
+// /src/hooks/use-mobile.jsx
+
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;

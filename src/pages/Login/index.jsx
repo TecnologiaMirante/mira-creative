@@ -17,7 +17,7 @@ export function Login() {
 
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || "/home/dashboard";
+  const from = location.state?.from?.pathname || "/home/programas";
 
   if (token) {
     return <Navigate to={from} replace />;

@@ -1,3 +1,7 @@
+// /src/components/AppSidebar.js
+
+import React from "react";
+
 import {
   ChevronLeft,
   Home as HomeIcon,
@@ -29,6 +33,7 @@ import { Logout } from "../../components/Logout";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { auth } from "../../../firebase";
 import { signOut } from "firebase/auth";
+import { customStylesModal } from "@/lib/utils";
 
 const firebaseLogout = async () => {
   await signOut(auth);
@@ -69,28 +74,13 @@ const SidebarContents = () => {
     setModalIsOpen(false);
   }
 
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      transform: "translate(-50%, -50%)",
-      width: "90%",
-      maxWidth: "400px",
-      height: "auto",
-      maxHeight: "90vh",
-      borderRadius: "0.5rem",
-      padding: "1rem",
-    },
-  };
-
   const mainMenuItems = [
-    { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
+    // { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
+    { title: "Programas", icon: HomeIcon, id: "programas" },
     {
-      title: "Criar Roteiro",
+      title: "Pautas",
       icon: FileText,
-      id: "create-script",
+      id: "pautas",
     },
 
     {
@@ -139,13 +129,24 @@ const SidebarContents = () => {
         <SidebarMenu>
           {mainMenuItems.map((item) => (
             <SidebarMenuItem key={item.id}>
-              <Link
+              {/* <Link
                 to={`/home/${item.id}`}
                 className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
                   isCollapsed ? "justify-center" : "justify-start"
                 } ${
                   location.pathname.endsWith(item.id) ||
                   (location.pathname === "/home" && item.id === "dashboard")
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              > */}
+              <Link
+                to={`/home/${item.id}`}
+                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
+                  isCollapsed ? "justify-center" : "justify-start"
+                } ${
+                  location.pathname.startsWith(`/home/${item.id}`) ||
+                  (location.pathname === "/home" && item.id === "programas")
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
@@ -232,7 +233,7 @@ const SidebarContents = () => {
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        style={customStyles}
+        style={customStylesModal}
         contentLabel="Menu"
         shouldCloseOnOverlayClick={false}
         ariaHideApp={false}
