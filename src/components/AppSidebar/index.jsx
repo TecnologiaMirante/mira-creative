@@ -101,7 +101,7 @@ const SidebarContents = () => {
       <SidebarToggle />
       {/* Sidebar Header*/}
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 bg-[#2563eb] rounded-lg flex items-center justify-center flex-shrink-0">
           <FileText className="h-6 w-6 text-primary-foreground" />
         </div>
         <div
@@ -147,7 +147,7 @@ const SidebarContents = () => {
                 } ${
                   location.pathname.startsWith(`/home/${item.id}`) ||
                   (location.pathname === "/home" && item.id === "programas")
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-[#2563eb] text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >

@@ -98,6 +98,7 @@ export function PautasListPage() {
   }, [allPautas, filters]); // Recalcula SÓ se a lista inteira ou os filtros mudarem
 
   const handleDeletePauta = async (pautaId) => {
+    console.log("oi");
     toast.promise(deletePauta(pautaId), {
       loading: "Excluindo pauta...",
       success: "Pauta movida para a lixeira!",
@@ -134,7 +135,6 @@ export function PautasListPage() {
           <Plus className="h-4 w-4" /> Cadastrar Pauta
         </Button>
       </div>
-
       {/* FILTROS */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,7 +213,6 @@ export function PautasListPage() {
           </div>
         </div>
       </Card>
-
       {filteredPautas.length === 0 ? (
         <Card className="p-12">
           <div className="text-center">
@@ -237,7 +236,6 @@ export function PautasListPage() {
             <PautaCardGrid
               key={pauta.id}
               pauta={pauta}
-              programaNome={pauta.program}
               onView={() => navigate(`/home/pautas/${pauta.id}`)}
               onEdit={() => navigate(`/home/pautas/edit/${pauta.id}`)}
               onDelete={handleDeletePauta}

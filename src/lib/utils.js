@@ -37,14 +37,21 @@ export const getUsersBadgeClasses = (status) => {
 };
 
 export const getProgramStyle = (program) => {
-  switch (program) {
-    case "Daqui":
-      return "text-indigo-600 border-indigo-500 fill-indigo-500";
-    case "Especial":
-      return "text-purple-600 border-purple-500 fill-purple-500";
-    default:
-      return "text-slate-600 border-slate-500 fill-slate-500";
+  // Se o programa não estiver definido, retorna o padrão
+  if (!program) return "text-slate-600 border-slate-500 fill-slate-500";
+
+  // Verifica exatamente "Daqui"
+  if (program === "Daqui") {
+    return "text-indigo-600 border-indigo-500 fill-indigo-500";
   }
+
+  // Verifica se COMEÇA com "Especial" (pega "Especial - Carnaval", "Especial - Natal", etc.)
+  if (program.startsWith("Especial")) {
+    return "text-purple-600 border-purple-500 fill-purple-500";
+  }
+
+  // Padrão para qualquer outro caso
+  return "text-slate-600 border-slate-500 fill-slate-500";
 };
 
 export const getStatusStyle = (status) => {
@@ -138,23 +145,38 @@ export const customStylesModal = {
   },
 };
 
-export function calcularDuracaoTotal(pautas) {
-  let totalSegundos = 0;
-
-  pautas.forEach((pauta) => {
-    const minutos = parseInt(pauta.duracaoMinutos, 10) || 0;
-    const segundos = parseInt(pauta.duracaoSegundos, 10) || 0;
-    totalSegundos += minutos * 60 + segundos;
-  });
-
-  if (totalSegundos === 0) {
+// Função para transformar Segundos Totais em "MM:SS" ou "HH:MM:SS"
+export function formatSegundos(totalSegundos) {
+  if (!totalSegundos || isNaN(totalSegundos) || totalSegundos < 0) {
     return "00:00";
   }
 
-  const minutosFinais = Math.floor(totalSegundos / 60);
-  const segundosFinais = totalSegundos % 60;
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
 
-  return `${String(minutosFinais).padStart(2, "0")}:${String(
-    segundosFinais
-  ).padStart(2, "0")}`;
+  const minFormat = String(minutos).padStart(2, "0");
+  const segFormat = String(segundos).padStart(2, "0");
+
+  if (horas > 0) {
+    return `${horas}:${minFormat}:${segFormat}`;
+  }
+  return `${minFormat}:${segFormat}`;
+}
+
+// Função auxiliar para calcular segundos totais de um array de pautas
+export function calcularTotalEmSegundos(pautas) {
+  if (!pautas || !Array.isArray(pautas)) return 0;
+
+  return pautas.reduce((acc, pauta) => {
+    const min = parseInt(pauta.duracaoMinutos, 10) || 0;
+    const seg = parseInt(pauta.duracaoSegundos, 10) || 0;
+    return acc + (min * 60 + seg);
+  }, 0);
+}
+
+// Sua função antiga pode usar a nova lógica para manter compatibilidade
+export function calcularDuracaoTotal(pautas) {
+  const total = calcularTotalEmSegundos(pautas);
+  return formatSegundos(total);
 }

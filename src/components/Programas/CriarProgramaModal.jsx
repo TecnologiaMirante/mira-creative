@@ -37,24 +37,28 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
   const { user } = useContext(UserContext);
 
   const [nome, setNome] = useState("Daqui");
+  const [nomeEspecial, setNomeEspecial] = useState("");
   const [status, setStatus] = useState("Em Produção");
   const [dataExibicao, setDataExibicao] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!dataExibicao) {
-      toast.error("A data de exibição é obrigatória.");
-      return;
-    }
+
     if (!user) {
       toast.error("Usuário não encontrado. Faça login novamente.");
       return;
     }
 
     setIsSaving(true);
+
+    const nomeFinal =
+      nome === "Especial" && nomeEspecial.trim() !== ""
+        ? `Especial - ${nomeEspecial.trim()}`
+        : nome;
+
     const programaData = {
-      nome,
+      nome: nomeFinal,
       status,
       dataExibicao,
       espelhoId: null, // Começa sem espelho
@@ -120,6 +124,20 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
                 onChange={(selected) => setNome(selected.value)}
                 required
               />
+              {nome === "Especial" && (
+                <div className="space-y-2">
+                  <Label htmlFor="nome-especial">Nome do Especial</Label>
+                  <input
+                    id="nome-especial"
+                    type="text"
+                    placeholder="Ex: Natal 2025, Carnaval, 20 anos da emissora..."
+                    className="w-full border border-slate-300 rounded-md p-2"
+                    value={nomeEspecial}
+                    onChange={(e) => setNomeEspecial(e.target.value)}
+                    required={nome === "Especial"}
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="programa-status">Status</Label>

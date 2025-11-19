@@ -7,9 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
-
 import {
   Edit,
   Trash2,
@@ -24,7 +22,6 @@ import {
   AlertTriangle,
   Timer,
 } from "lucide-react";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,35 +33,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
 import {
   convertTimestamp,
   getStatusClasses,
   getStatusStyle,
   getProgramStyle,
 } from "@/lib/utils";
-
 import { Link } from "react-router-dom";
-
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-
 import { useUserCache } from "@/context/UserCacheContext";
-
-import { useContext } from "react";
-
+import { useContext, useEffect, useState } from "react";
 import UserContext from "@/context/UserContext";
+import { getPrograma } from "../../../firebase";
 
 // --- Componentes Internos (Helpers) ---
 
 const InfoItem = ({ icon: Icon, children }) => (
   <div className="flex items-center gap-2 text-sm text-slate-500">
     <Icon className="h-4 w-4 flex-shrink-0" />
-
     <div className="truncate">{children || <p>Não informado</p>}</div>
   </div>
 );
@@ -85,47 +76,48 @@ const StatusBadge = ({ status }) => {
 
 function formatGravacao(inicio, fim) {
   const dataInicio = convertTimestamp(inicio);
-
   if (dataInicio === "Não definida") return "Não definida";
-
   const dataFim = convertTimestamp(fim);
-
   if (dataFim === "Não definida" || dataFim === dataInicio) {
     return dataInicio;
   }
-
   return `${dataInicio} - ${dataFim}`;
 }
 
 // --- Card Principal (GRID) ---
 
-export function PautaCardGrid({
-  pauta,
-
-  programaNome,
-
-  onView,
-
-  onEdit,
-
-  onDelete,
-}) {
+export function PautaCardGrid({ pauta, onView, onEdit, onDelete }) {
   const { user } = useContext(UserContext);
-
   const { getUserById, isLoadingCache } = useUserCache();
-
   const produtor = getUserById(pauta.produtorId);
-
   const apresentador = getUserById(pauta.apresentadorId);
-
   const roteirista = getUserById(pauta.roteiristaId);
+  const [nomePrograma, setNomePrograma] = useState("Carregando...");
+
+  useEffect(() => {
+    const fetchNome = async () => {
+      if (!pauta?.programaId) {
+        setNomePrograma("Programa não vinculado");
+        return;
+      }
+
+      // Chama sua função
+      const programaData = await getPrograma(pauta.programaId);
+
+      // Se achou, salva o nome no estado
+      if (programaData) {
+        setNomePrograma(programaData.nome);
+      } else {
+        setNomePrograma("Programa não encontrado");
+      }
+    };
+
+    fetchNome();
+  }, [pauta.programaId]); // Só roda se o ID mudar
 
   // --- Lógica de Datas ---
-
   let isDateInvalid = false;
-
   const dataInicio = pauta.dataGravacaoInicio;
-
   const dataExibicao = pauta.dataExibicao;
 
   if (dataInicio && dataExibicao) {
@@ -145,7 +137,6 @@ export function PautaCardGrid({
   }
 
   const pautaStyle = getStatusClasses(pauta.status);
-
   const duracao = `${pauta.duracaoMinutos || "00"}:${
     pauta.duracaoSegundos || "00"
   }`;
@@ -161,10 +152,10 @@ export function PautaCardGrid({
             <div className="flex-1 min-w-0">
               <p
                 className={`text-base font-bold ${getProgramStyle(
-                  programaNome
+                  nomePrograma
                 )}`}
               >
-                {programaNome || pauta.program || "N/D"}
+                {nomePrograma}
               </p>
 
               <Link to={`/home/pautas/${pauta.id}`}>
@@ -337,49 +328,47 @@ export function PautaCardGrid({
                 </Tooltip>
 
                 {onDelete && (
-                  <Tooltip>
-                    <AlertDialog>
+                  <AlertDialog>
+                    <Tooltip>
                       <TooltipTrigger asChild>
-                        {/* Removido o <AlertDialogTrigger> duplicado */}
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
                       </TooltipTrigger>
 
                       <TooltipContent>
                         <p>Excluir Pauta</p>
                       </TooltipContent>
+                    </Tooltip>
 
-                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Excluir esta Pauta?
-                          </AlertDialogTitle>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir esta Pauta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          A pauta será movida para a lixeira (invisível).
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
 
-                          <AlertDialogDescription>
-                            A pauta será movida para a lixeira (invisível).
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-
-                          <AlertDialogAction
-                            onClick={() => onDelete(pauta.id)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Sim, Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </Tooltip>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            console.log("Excluindo pauta...", pauta.id);
+                            onDelete(pauta.id);
+                          }}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Sim, Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </>
             )}

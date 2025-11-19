@@ -43,34 +43,41 @@ export function EditarProgramaModal({
   const { user } = useContext(UserContext);
   const { getUserById } = useUserCache();
 
-  const [nome, setNome] = useState(programa.nome);
-  const [status, setStatus] = useState(programa.status);
-  const [dataExibicao, setDataExibicao] = useState(
-    programa.dataExibicao.toDate
-      ? programa.dataExibicao.toDate()
-      : programa.dataExibicao
-  );
+  const [nome, setNome] = useState(programa?.nome || "");
+  const [nomeEspecial, setNomeEspecial] = useState("");
+  const [status, setStatus] = useState(programa?.status || "");
+  const [dataExibicao, setDataExibicao] = useState(() => {
+    if (!programa?.dataExibicao) return null;
+    return programa.dataExibicao.toDate?.() || programa.dataExibicao;
+  });
+
   const [isSaving, setIsSaving] = useState(false);
 
   // Atualiza o estado se a prop 'programa' mudar
   useEffect(() => {
     if (programa) {
       setNome(programa.nome);
+
+      // Detecta se é "Especial - Nome"
+      if (programa.nome.startsWith("Especial - ")) {
+        setNome("Especial");
+        setNomeEspecial(programa.nome.replace("Especial - ", ""));
+      } else {
+        setNome(programa.nome);
+        setNomeEspecial("");
+      }
+
       setStatus(programa.status);
-      setDataExibicao(
-        programa.dataExibicao.toDate
-          ? programa.dataExibicao.toDate()
-          : programa.dataExibicao
-      );
+      setDataExibicao(() => {
+        if (!programa?.dataExibicao) return null;
+        return programa.dataExibicao.toDate?.() || programa.dataExibicao;
+      });
     }
   }, [programa]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!dataExibicao) {
-      toast.error("A data de exibição é obrigatória.");
-      return;
-    }
+
     if (!user) {
       toast.error("Usuário não autenticado.");
       return;
@@ -79,8 +86,14 @@ export function EditarProgramaModal({
     setIsSaving(true);
 
     const editor = getUserById(user.uid);
+
+    const nomeFinal =
+      nome === "Especial" && nomeEspecial.trim() !== ""
+        ? `Especial - ${nomeEspecial.trim()}`
+        : nome;
+
     const programaData = {
-      nome,
+      nome: nomeFinal,
       status,
       dataExibicao,
       lastEditedByName: editor.display_name || "N/D",
@@ -90,7 +103,6 @@ export function EditarProgramaModal({
       const success = await updatePrograma(programa.id, programaData);
       if (success) {
         toast.success("Programa atualizado com sucesso!");
-        // Passa os dados atualizados de volta para a lista
         onProgramaUpdated({ ...programa, ...programaData });
         onClose();
       } else {
@@ -137,17 +149,31 @@ export function EditarProgramaModal({
               <Select
                 inputId="programa-nome"
                 options={programsOptions}
-                value={programsOptions.find((o) => o.value === nome)}
+                value={programsOptions.find((o) => o.value === nome) || null}
                 onChange={(selected) => setNome(selected.value)}
                 required
               />
+              {nome === "Especial" && (
+                <div className="space-y-2">
+                  <Label htmlFor="nome-especial">Nome do Especial</Label>
+                  <input
+                    id="nome-especial"
+                    type="text"
+                    placeholder="Ex: Natal 2025, Carnaval..."
+                    className="w-full border border-slate-300 rounded-md p-2"
+                    value={nomeEspecial}
+                    onChange={(e) => setNomeEspecial(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="programa-status">Status</Label>
               <Select
                 inputId="programa-status"
                 options={statusOptions}
-                value={statusOptions.find((o) => o.value === status)}
+                value={statusOptions.find((o) => o.value === status) || null}
                 onChange={(selected) => setStatus(selected.value)}
                 required
               />

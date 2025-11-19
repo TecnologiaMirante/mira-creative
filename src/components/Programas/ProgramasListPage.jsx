@@ -54,10 +54,18 @@ export function ProgramasListPage() {
 
   const filteredProgramas = useMemo(() => {
     return allProgramas.filter((programa) => {
+      // FILTRO POR STATUS (igualdade)
       if (filters.status !== "all" && programa.status !== filters.status)
         return false;
-      if (filters.nome !== "all" && programa.nome !== filters.nome)
-        return false;
+
+      // FILTRO POR NOME (busca parcial, incluindo "Especial - ...")
+      if (filters.nome !== "all") {
+        const filterValue = filters.nome.toLowerCase();
+        const programName = programa.nome.toLowerCase();
+
+        if (!programName.includes(filterValue)) return false;
+      }
+
       return true;
     });
   }, [allProgramas, filters]); // Recalcula quando a lista ou os filtros mudam

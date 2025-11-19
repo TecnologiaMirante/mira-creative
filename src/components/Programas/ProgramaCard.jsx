@@ -35,6 +35,7 @@ import {
   convertTimestamp,
   getProgramStyle,
   getStatusStyle,
+  formatSegundos,
 } from "@/lib/utils";
 import { useUserCache } from "@/context/UserCacheContext";
 
@@ -56,18 +57,6 @@ const StatusBadge = ({ status }) => {
     </div>
   );
 };
-
-function formatSegundos(totalSegundos) {
-  if (!totalSegundos || totalSegundos < 0) {
-    return "00:00";
-  }
-  const minutos = Math.floor(totalSegundos / 60);
-  const segundos = totalSegundos % 60;
-  return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(
-    2,
-    "0"
-  )}`;
-}
 
 // --- Card Principal ---
 export function ProgramaCard({ programa, onDelete, onEdit }) {
@@ -121,7 +110,7 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
             <InfoItem icon={Clock}>
               <p>
                 <span className="font-semibold text-slate-700">Duração: </span>
-                {formatSegundos(programa.duracaoTotalSegundos)}{" "}
+                {formatSegundos(programa.duracaoTotalSegundos)}
               </p>
             </InfoItem>
 

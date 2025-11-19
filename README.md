@@ -4,17 +4,17 @@ Mira Creative é uma plataforma web robusta para gerenciamento de roteiros e pro
 
 ## ✨ Funcionalidades Principais
 
-- **Autenticação Google Restrita**: Acesso seguro e exclusivo para contas `@mirante.com.br`.
+- **Autenticação Robusta**: Acesso seguro e exclusivo para contas `@mirante.com.br` via Google. A sessão do usuário é verificada de forma inteligente no carregamento, proporcionando uma experiência de login fluida e sem "piscar" a tela.
 - **Dashboard de Roteiros**: Interface central com visualização em cards para criar, visualizar, filtrar, editar e excluir roteiros.
 - **Gerenciamento de Permissões**: Sistema de papéis (Administrador, Produtor, etc.) que controla o acesso a funcionalidades como edição e exclusão.
 - **Filtros Avançados**: Ferramentas poderosas para encontrar roteiros por status, produtor, apresentador, programa e localidade.
-- **Cronograma de Produção**: Calendário interativo (`FullCalendar`) que exibe as datas de gravação e exibição, com filtros e visualizações por dia, semana e mês.
+- **Cronograma de Produção**: Calendário interativo (`FullCalendar`) que exibe as datas de gravação e exibição. Inclui tooltips ricos em informações ao passar o mouse sobre os eventos e filtros dinâmicos.
 - **Exportação para PDF**: Geração de documentos PDF profissionais e detalhados a partir dos roteiros, incluindo a logo da empresa.
 
 ### 🤖 Recursos de Inteligência Artificial
 
 - **Aprimoramento de Roteiros com IA**: Ferramenta integrada à API da OpenAI (`GPT`) que analisa o roteiro existente e sugere melhorias para o texto e para as descrições de vídeo, linha por linha.
-- **Assistente de Chat "Daqui"**: Chatbot integrado à API do Google Gemini (`Firebase Cloud Function`) que responde a perguntas sobre os roteiros cadastrados, agindo como um especialista nos dados da plataforma.
+- **Assistente de Chat "Daqui"**: Chatbot integrado à API do Google Gemini (via `Firebase Cloud Function`) que responde a perguntas sobre os roteiros cadastrados, agindo como um especialista nos dados da plataforma.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -54,6 +54,7 @@ Para executar o projeto em seu ambiente de desenvolvimento, siga os passos abaix
 
 3.  **Configure as variáveis de ambiente:**
     Crie um arquivo `.env` na raiz do projeto e adicione as chaves de configuração do seu projeto Firebase. Você pode encontrá-las no console do Firebase em `Configurações do projeto > Suas apps > Configuração do SDK`.
+    Adicione também as chaves para a API da OpenAI.
 
     ```env
     # Firebase

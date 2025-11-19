@@ -1,4 +1,4 @@
-// /src/components/Card/BasicInfoCardindex.jsx
+// /src/components/Card/BasicInfoCard.jsx
 
 import Select from "react-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +15,7 @@ import { AlertTriangle, CalendarIcon } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "../ui/switch";
-
-// --- Opções para os seletores ---
-const programsOptions = [
-  { value: "Daqui", label: "Daqui" },
-  { value: "Especial", label: "Especial" },
-];
+import { getPrograma } from "../../../firebase";
 
 const statusOptions = [
   { value: "Aprovado", label: "Aprovado" },
@@ -81,13 +76,43 @@ export function BasicInfoCard({
   isReadOnly = false,
 }) {
   const { userCache, isLoadingCache = true } = useUserCache() || {};
-  const [isRangeMode, setIsRangeMode] = useState(
-    () => !!formData.dataGravacaoFim
-  );
+  const [isRangeMode, setIsRangeMode] = useState(!!formData.dataGravacaoFim);
+
+  const [nomePrograma, setNomePrograma] = useState("Carregando...");
 
   useEffect(() => {
-    setIsRangeMode(!!formData.dataGravacaoFim);
-  }, [formData.dataGravacaoFim]);
+    const fetchNome = async () => {
+      if (!formData?.programaId) {
+        setNomePrograma("Programa não vinculado");
+        return;
+      }
+
+      // Chama sua função
+      const programaData = await getPrograma(formData.programaId);
+
+      // Se achou, salva o nome no estado
+      if (programaData) {
+        setNomePrograma(programaData.nome);
+      } else {
+        setNomePrograma("Programa não encontrado");
+      }
+    };
+
+    fetchNome();
+  }, [formData.programaId]); // Só roda se o ID mudar
+
+  useEffect(
+    () => setIsRangeMode(!!formData.dataGravacaoFim),
+    [formData.dataGravacaoFim]
+  );
+
+  const userOptions = useMemo(() => {
+    if (isLoadingCache || !userCache) return []; // Proteção contra 'undefined'
+    return [...userCache.values()].map((user) => ({
+      value: user.uid,
+      label: user.display_name,
+    }));
+  }, [userCache, isLoadingCache]);
 
   const selectedDate = useMemo(() => {
     if (isRangeMode) {
@@ -98,14 +123,6 @@ export function BasicInfoCard({
     }
     return formData.dataGravacaoInicio || null;
   }, [formData.dataGravacaoInicio, formData.dataGravacaoFim, isRangeMode]);
-
-  const userOptions = useMemo(() => {
-    if (isLoadingCache || !userCache) return []; // Proteção contra 'undefined'
-    return [...userCache.values()].map((user) => ({
-      value: user.uid,
-      label: user.display_name,
-    }));
-  }, [userCache, isLoadingCache]);
 
   const handleDateSelect = (value) => {
     if (isRangeMode) {
@@ -158,28 +175,16 @@ export function BasicInfoCard({
           Informações Básicas
         </CardTitle>
       </CardHeader>
+      <div className="px-6 pb-2">
+        <div className="p-4 bg-slate-100 border rounded-lg space-y-2">
+          <p className="text-sm text-slate-600">
+            <span className="font-semibold text-slate-800">Programa:</span>{" "}
+            {nomePrograma}
+          </p>
+        </div>
+      </div>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-          {/* PROGRAMA */}
-          <div className="space-y-2 md:col-span-2 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-            <Label htmlFor="program" className="font-semibold text-indigo-800">
-              Programa
-            </Label>
-            <Select
-              inputId="program"
-              options={programsOptions}
-              styles={customSelectStyles}
-              value={
-                programsOptions.find((o) => o.value === formData.program) ||
-                null
-              }
-              onChange={(selected) => onFormChange("program", selected.value)}
-              placeholder="Selecione o programa"
-              isDisabled={isReadOnly}
-              required
-            />
-          </div>
-
           {/* Pauta */}
           <div className="space-y-2">
             <Label htmlFor="titulo">Título da Pauta</Label>
@@ -286,10 +291,11 @@ export function BasicInfoCard({
               }
               onChange={(selected) => {
                 onFormChange("cidade", selected.value);
-                if (selected.value === "MARANHÃO") {
+                if (
+                  selected.value === "MARANHÃO" &&
+                  formData.bairro !== "TODOS"
+                ) {
                   onFormChange("bairro", "TODOS");
-                } else {
-                  onFormChange("bairro", "");
                 }
               }}
               placeholder="Selecione a cidade"
@@ -309,7 +315,7 @@ export function BasicInfoCard({
                   onCheckedChange={(checked) =>
                     onFormChange("bairro", checked ? "TODOS" : "")
                   }
-                  disabled={isReadOnly || formData.cidade === "MARANHÃO"}
+                  disabled={isReadOnly}
                 />
                 <Label
                   htmlFor="todosBairros"

@@ -1,8 +1,7 @@
 // /src/components/Card/ScriptForm.jsx
 
 import { useState, useEffect, useContext } from "react";
-import { db, createPauta } from "../../../firebase";
-// import { db, createPauta, enviarNotificacao } from "../../../firebase";
+import { createPauta, enviarNotificacaoCriacao } from "../../../firebase";
 import { BasicInfoCard } from "./BasicInfoCard";
 import { toast } from "sonner";
 import { Save, ArrowLeft } from "lucide-react";
@@ -12,7 +11,6 @@ import { useUserCache } from "@/context/UserCacheContext";
 import { Button } from "../ui/button";
 
 const initialState = {
-  program: "Daqui",
   produtorId: "",
   cidade: "",
   bairro: "",
@@ -45,11 +43,23 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
   // UseEffect para popular dados
   useEffect(() => {
     if (mode === "create") {
-      setFormData(initialState);
+      setFormData({
+        ...initialState,
+        // program: programaNome,
+        // espelhoId
+      });
     } else if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        // program: initialData.program || programaNome,
+      });
     }
-  }, [initialData, mode]);
+  }, [
+    initialData,
+    mode,
+    // programaNome,
+    // espelhoId
+  ]);
 
   // useEffect para carregar cidades do IBGE
   useEffect(() => {
@@ -125,7 +135,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
 
     // Separar dados da Pauta e do Roteiro
     const pautaData = {
-      program: formData.program,
+      // espelhoId,
       produtorId: formData.produtorId,
       apresentadorId: formData.apresentadorId,
       roteiristaId: formData.roteiristaId,
@@ -148,45 +158,41 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
       }
 
       if (!isLoadingCache) {
-        // Só envie se o cache de nomes estiver pronto
-        const linkDaPauta = `${window.location.origin}/home/pautas/edit/${newPautaId}`;
-
         // Envia para o Produtor
-        // const produtor = getUserById(pautaData.produtorId);
-        // console.log(produtor.email);
-        // if (produtor.email) {
-        //   enviarNotificacao(
-        //     produtor.email,
-        //     pautaData.titulo,
-        //     linkDaPauta,
-        //     "Produtor(a)"
-        //   );
-        // }
+        const produtor = getUserById(pautaData.produtorId);
+        if (produtor?.email) {
+          enviarNotificacaoCriacao(
+            produtor.email,
+            pautaData.titulo,
+            newPautaId,
+            "Produtor"
+          );
+        }
 
         // Envia para o Apresentador
-        // const apresentador = getUserById(pautaData.apresentadorId);
-        // if (apresentador.email) {
-        //   enviarNotificacao(
-        //     apresentador.email,
-        //     pautaData.titulo,
-        //     linkDaPauta,
-        //     "Apresentador(a)"
-        //   );
-        // }
+        const apresentador = getUserById(pautaData.apresentadorId);
+        if (apresentador?.email) {
+          enviarNotificacaoCriacao(
+            apresentador.email,
+            pautaData.titulo,
+            newPautaId,
+            "Apresentador"
+          );
+        }
 
         // Envia para o Roteirista
-        // const roteirista = getUserById(pautaData.roteiristaId);
-        // if (roteirista.email) {
-        //   enviarNotificacao(
-        //     roteirista.email,
-        //     pautaData.titulo,
-        //     linkDaPauta,
-        //     "Roteirista"
-        //   );
-        // }
+        const roteirista = getUserById(pautaData.roteiristaId);
+        if (roteirista?.email) {
+          enviarNotificacaoCriacao(
+            roteirista.email,
+            pautaData.titulo,
+            newPautaId,
+            "Roteirista"
+          );
+        }
       }
 
-      toast.success("Pauta criada com sucesso!", { duration: 3000 });
+      toast.success("Pauta criada com sucesso!", { duration: 2000 });
       navigate(-1);
     } catch (error) {
       console.error("Erro ao salvar:", error);
@@ -217,6 +223,8 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
           cidades={cidades}
           isReadOnly={isReadOnly}
           dateError={dateValidationError}
+          // espelhoId={espelhoId}
+          // programaNome={programaNome}
         />
         {!isReadOnly && (
           <div className="flex justify-end gap-4">
