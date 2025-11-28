@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Modal from "react-modal";
-import { getPautas } from "../../../firebase"; // Função que já criamos
+import { getPautas } from "../../../firebase";
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";

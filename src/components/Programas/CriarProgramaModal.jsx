@@ -46,7 +46,9 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
     e.preventDefault();
 
     if (!user) {
-      toast.error("Usuário não encontrado. Faça login novamente.");
+      toast.error("Usuário não encontrado. Faça login novamente.", {
+        duration: 1500,
+      });
       return;
     }
 
@@ -71,7 +73,7 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
     try {
       const newProgramaId = await createPrograma(programaData);
       if (newProgramaId) {
-        toast.success("Programa criado com sucesso!");
+        toast.success("Programa criado com sucesso!", { duration: 1500 });
 
         onProgramaCreated({
           id: newProgramaId,
@@ -84,7 +86,10 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
         throw new Error("Falha ao retornar ID do novo programa.");
       }
     } catch (error) {
-      toast.error("Erro ao criar programa.", { description: error.message });
+      toast.error("Erro ao criar programa.", {
+        description: error.message,
+        duration: 1500,
+      });
     } finally {
       setIsSaving(false);
     }

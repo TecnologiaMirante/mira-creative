@@ -158,9 +158,9 @@ export function ProgramaDetailPage() {
         ...prev,
         pautaCount: Math.max(0, (prev.pautaCount || 0) - 1),
       }));
-      toast.success("Pauta removida do espelho.");
+      toast.success("Pauta removida do espelho.", { duration: 1500 });
     } else {
-      toast.error("Erro ao remover pauta.");
+      toast.error("Erro ao remover pauta.", { duration: 1500 });
     }
     setIsSaving(false);
   };
@@ -169,7 +169,7 @@ export function ProgramaDetailPage() {
     if (!espelho || !programa) return;
     const pautasData = await getPautasByIds([pautaId]);
     if (pautasData.length === 0) {
-      toast.error("Erro ao buscar dados da pauta.");
+      toast.error("Erro ao buscar dados da pauta.", { duration: 1500 });
       return;
     }
     const pautaParaAdicionar = pautasData[0];
@@ -185,15 +185,17 @@ export function ProgramaDetailPage() {
         ...prev,
         pautaCount: (prev.pautaCount || 0) + 1,
       }));
-      toast.success("Pauta adicionada ao espelho!");
+      toast.success("Pauta adicionada ao espelho!", { duration: 1500 });
     } else {
-      toast.error("Erro ao adicionar pauta.");
+      toast.error("Erro ao adicionar pauta.", { duration: 1500 });
     }
   };
 
   const handleCreateEspelho = async () => {
     if (!programa || !user) {
-      toast.error("Erro: Programa ou usuário não carregado.");
+      toast.error("Erro: Programa ou usuário não carregado.", {
+        duration: 1500,
+      });
       return;
     }
     setIsCreatingEspelho(true);
@@ -201,9 +203,9 @@ export function ProgramaDetailPage() {
     if (newEspelhoData) {
       setEspelho(newEspelhoData);
       setPrograma((prev) => ({ ...prev, espelhoId: newEspelhoData.id }));
-      toast.success("Espelho criado com sucesso!");
+      toast.success("Espelho criado com sucesso!", { duration: 1500 });
     } else {
-      toast.error("Falha ao criar o espelho.");
+      toast.error("Falha ao criar o espelho.", { duration: 1500 });
     }
     setIsCreatingEspelho(false);
   };
@@ -221,7 +223,7 @@ export function ProgramaDetailPage() {
       setIsSaving(true);
       const pautaIds = newPautas.map((p) => p.id);
       await updateEspelhoPautas(espelho.id, pautaIds);
-      toast.success("Ordem do espelho salva!");
+      toast.success("Ordem do espelho salva!", { duration: 1500 });
       setIsSaving(false);
     }
   };

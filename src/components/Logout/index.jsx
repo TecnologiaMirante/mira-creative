@@ -8,7 +8,7 @@ export function Logout({ closeModal, user, logout }) {
 
       {/* Info do usuário */}
       <div className="text-sm text-gray-800 text-center border-y border-gray-200 py-3">
-        Sair do <strong>Mira Creativef</strong> com <br />
+        Sair do <strong>Mira Creative</strong> com <br />
         <span className="text-color_blue font-medium break-words">
           {user.email}
         </span>

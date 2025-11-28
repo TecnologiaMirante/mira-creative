@@ -103,6 +103,7 @@ export function PautasListPage() {
       loading: "Excluindo pauta...",
       success: "Pauta movida para a lixeira!",
       error: "Falha ao excluir pauta.",
+      duration: 1500,
     });
   };
 
@@ -122,10 +123,13 @@ export function PautasListPage() {
   return (
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Pautas</h1>
+        <div className="flex flex-col justify-center items-start space-y-2">
+          <div className="flex items-center gap-2">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <h1 className="text-4xl font-bold">Pautas</h1>
+          </div>
           <p className="text-lg text-muted-foreground">
-            Todas as pautas cadastradas no sistema.
+            Todas as pautas cadastradas no sistema
           </p>
         </div>
         <Button

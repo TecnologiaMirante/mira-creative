@@ -12,7 +12,7 @@ import {
 } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
 import UserContext from "@/context/UserContext";
-import { ArrowLeft, Save, FilePlus } from "lucide-react";
+import { ArrowLeft, Save, FilePlus, FileDown, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -20,6 +20,7 @@ import { BasicInfoCard } from "../Card/BasicInfoCard";
 import { DetailedScriptCard } from "../Card/DetailedScriptCard ";
 import { Card, CardContent } from "../ui/card";
 import { useUserCache } from "@/context/UserCacheContext";
+import { exportScriptToPDF } from "@/lib/exportUtils";
 
 export function PautaDetailPage() {
   const { id: pautaId } = useParams();
@@ -37,6 +38,7 @@ export function PautaDetailPage() {
   const [scriptRows, setScriptRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [cidades, setCidades] = useState([]);
   const [dateValidationError, setDateValidationError] = useState("");
@@ -49,12 +51,11 @@ export function PautaDetailPage() {
 
       const pautaData = await getPauta(pautaId);
       if (!pautaData) {
-        toast.error("Pauta não encontrada.");
-        navigate("/home/programas");
+        toast.error("Pauta não encontrada."), { duration: 1500 };
+        navigate("/home/pautas");
         return;
       }
 
-      // --- users carregados via cache ---
       const produtor = pautaData.produtorId
         ? getUserById(pautaData.produtorId)
         : null;
@@ -67,7 +68,6 @@ export function PautaDetailPage() {
         ? getUserById(pautaData.roteiristaId)
         : null;
 
-      // --- formatação das datas (Firebase → JS Date) ---
       const formattedPauta = {
         id: pautaId,
         ...pautaData,
@@ -92,7 +92,6 @@ export function PautaDetailPage() {
       setPauta(formattedPauta);
       setOriginalPauta(structuredClone(formattedPauta));
 
-      // --- carregar roteiro ---
       if (pautaData.roteiroId) {
         const roteiroData = await getRoteiro(pautaData.roteiroId);
 
@@ -104,7 +103,8 @@ export function PautaDetailPage() {
               : [{ id: uuidv4(), video: "", texto: "" }]
           );
         } else {
-          toast.error(`Roteiro (ID: ${pautaData.roteiroId}) não encontrado.`);
+          toast.error(`Roteiro (ID: ${pautaData.roteiroId}) não encontrado.`),
+            { duration: 1500 };
           setPauta((prev) => ({ ...prev, roteiroId: null }));
           setRoteiro(null);
         }
@@ -195,6 +195,7 @@ export function PautaDetailPage() {
       toast.error("Erro", {
         description:
           "Você deve primeiro salvar um Roteirista antes de adicionar um roteiro.",
+        duration: 1500,
       });
       return;
     }
@@ -268,6 +269,7 @@ export function PautaDetailPage() {
       toast.warning("O roteiro está vazio!", {
         description:
           "Escreva pelo menos um rascunho para a IA poder aprimorar.",
+        duration: 1500,
       });
       return;
     }
@@ -393,6 +395,7 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
       if (responseContent.feedback) {
         toast.warning("Aviso da IA: ", {
           description: responseContent.feedback,
+          duration: 1500,
         });
         return;
       }
@@ -405,7 +408,8 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
         : [];
 
       if (suggestionsArray.length === 0) {
-        toast.info("A IA analisou, mas não teve sugestões para este trecho.");
+        toast.info("A IA analisou, mas não teve sugestões para este trecho."),
+          { duration: 1500 };
         return;
       }
 
@@ -427,11 +431,11 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
         })
       );
       if (suggestionsArray.length > 0) {
-        toast.success("Sugestões da IA carregadas!");
+        toast.success("Sugestões da IA carregadas!"), { duration: 1500 };
       }
     } catch (error) {
       console.error("Falha ao chamar a API da OpenAI:", error);
-      toast.error("Erro ao buscar sugestões.");
+      toast.error("Erro ao buscar sugestões."), { duration: 1500 };
     } finally {
       setIsAIAssistantLoading(false);
     }
@@ -483,11 +487,13 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
   // Handler de salvar
   const handleSaveChanges = async () => {
     if (!pauta || !user) {
-      toast.error("Erro: Dados da pauta ou usuário não carregados.");
+      toast.error("Erro: Dados da pauta ou usuário não carregados."),
+        { duration: 1500 };
       return;
     }
     if (dateValidationError) {
-      toast.error("Erro de Validação", { description: dateValidationError });
+      toast.error("Erro de Validação", { description: dateValidationError }),
+        { duration: 1500 };
       return;
     }
 
@@ -545,14 +551,14 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
       const emailsUnicos = [...new Set(emails)];
 
       if (emailsUnicos.length > 0) {
-        await enviarNotificacaoEdicao(
+        enviarNotificacaoEdicao(
           emailsUnicos,
           pauta.titulo,
           pauta.id,
           detalhesConvertidos,
           originalPauta,
           pauta
-        );
+        ).catch(console.error);
       }
     }
     try {
@@ -562,8 +568,12 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
           .map(({ id, video, texto }) => ({ id, video, texto }));
 
         let roteiroIdFinal = roteiro.id;
+
         if (roteiro.id === "temp") {
-          toast.loading("Criando novo roteiro...");
+          const toastId = toast.loading("Criando novo roteiro...", {
+            duration: 1500,
+          });
+
           const newRoteiroId = await createRoteiro(
             { scriptRows: scriptRowsToSave, pautaId: pauta.id },
             user.uid
@@ -581,7 +591,11 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
             user.uid
           );
 
-          toast.success("Pauta e Roteiro criados e salvos!");
+          toast.success("Pauta e Roteiro criados e salvos!", {
+            id: toastId,
+            duration: 1500,
+          });
+
           navigate(-1);
         } else {
           await toast.promise(
@@ -596,6 +610,7 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
                 return "Pauta e Roteiro salvos com sucesso!";
               },
               error: "Erro ao salvar alterações.",
+              duration: 1500,
             }
           );
         }
@@ -604,15 +619,37 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
           loading: "Salvando alterações da pauta...",
           success: "Pauta salva com sucesso!",
           error: "Erro ao salvar pauta.",
+          duration: 1500,
         });
         navigate(-1);
       }
     } catch (error) {
       console.error("Erro ao salvar:", error);
-      toast.error("Erro ao salvar.", { description: error.message });
+      toast.error("Erro ao salvar.", {
+        description: error.message,
+        duration: 1500,
+      });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handler de Exportar PDF
+  const handleExportPDF = async () => {
+    if (!pauta) return;
+    setIsExporting(true);
+
+    // Mapeia os nomes corretos para o PDF
+    const pdfData = {
+      ...pauta,
+      produtor: pauta.produtorNome, // Mapeia Produtor
+      apresentador: pauta.apresentadorNome, // Mapeia Apresentador
+      roteirista: pauta.roteiristaNome, // Mapeia Roteirista (NOVO)
+      // Os campos de duração e data já existem dentro de '...pauta'
+    };
+
+    await exportScriptToPDF(pdfData, scriptRows);
+    setIsExporting(false);
   };
 
   if (isLoading) {
@@ -625,20 +662,42 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">{pauta?.titulo || "Roteiro"}</h1>
-          <p className="text-lg text-muted-foreground">
-            {mode === "edit" ? "Modo de Edição" : "Modo de Visualização"}
-          </p>
+      <div className="flex justify-between items-start">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">{pauta?.titulo || "Roteiro"}</h1>
+            <p className="text-lg text-muted-foreground">
+              {mode === "edit" ? "Modo de Edição" : "Modo de Visualização"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-row gap-2">
+          <Button
+            variant="outline"
+            className="gap-2 border-slate-300"
+            onClick={() => navigate(`/home/pautas/edit/${pautaId}`)}
+          >
+            <Edit className="h-4 w-4" />
+            Editar
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-slate-300"
+            onClick={handleExportPDF}
+            disabled={isExporting}
+          >
+            <FileDown className="h-4 w-4" />
+            {isExporting ? "Gerando PDF..." : "Exportar PDF"}
+          </Button>
         </div>
       </div>
       <BasicInfoCard

@@ -1,6 +1,13 @@
 // /src/lib/utils.js
 
 import { clsx } from "clsx";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  PlayCircle,
+  XCircle,
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
@@ -16,24 +23,6 @@ export const getStatusClasses = (status) => {
     Cancelado: "border-red-600 ",
   };
   return statusMap[status] || "border-slate-600";
-};
-
-export const getUsersBadgeClasses = (status) => {
-  const statusMap = {
-    Administrador:
-      "bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd] hover:bg-[#dbeafe]",
-    Produtor:
-      "bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] hover:bg-[#fef3c7]",
-    Apresentador:
-      "bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7] hover:bg-[#d1fae5]",
-    Visualizador:
-      "bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] hover:bg-[#fee2e2]",
-  };
-
-  return (
-    statusMap[status] ||
-    "bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] hover:bg-[#f3f4f6]"
-  );
 };
 
 export const getProgramStyle = (program) => {
@@ -64,6 +53,24 @@ export const getStatusStyle = (status) => {
   };
 
   return statusStyles[status] || "text-slate-700";
+};
+
+export const getUsersBadgeClasses = (status) => {
+  const statusMap = {
+    Administrador:
+      "bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd] hover:bg-[#dbeafe]",
+    Produtor:
+      "bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] hover:bg-[#fef3c7]",
+    Apresentador:
+      "bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7] hover:bg-[#d1fae5]",
+    Visualizador:
+      "bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] hover:bg-[#fee2e2]",
+  };
+
+  return (
+    statusMap[status] ||
+    "bg-[#f3f4f6] text-[#374151] border border-[#d1d5db] hover:bg-[#f3f4f6]"
+  );
 };
 
 export const getPdfStatusColors = (status) => {
@@ -180,3 +187,69 @@ export function calcularDuracaoTotal(pautas) {
   const total = calcularTotalEmSegundos(pautas);
   return formatSegundos(total);
 }
+
+// --- CONFIGURAÇÃO DE CORES E ESTILOS PARA CRONOGRAMA ---
+export const getStatusConfig = (status) => {
+  const map = {
+    Aprovado: {
+      bg: "bg-blue-50",
+      border: "border-l-4 border-blue-600",
+      text: "text-blue-700",
+      icon: CheckCircle2,
+    },
+    "Em Produção": {
+      bg: "bg-amber-50",
+      border: "border-l-4 border-amber-600",
+      text: "text-amber-700",
+      icon: Clock3,
+    },
+    "Em Revisão": {
+      bg: "bg-pink-50",
+      border: "border-l-4 border-pink-600",
+      text: "text-pink-700",
+      icon: AlertCircle,
+    },
+    Exibido: {
+      bg: "bg-emerald-50",
+      border: "border-l-4 border-emerald-600",
+      text: "text-emerald-700",
+      icon: PlayCircle,
+    },
+    Cancelado: {
+      bg: "bg-red-50",
+      border: "border-l-4 border-red-600",
+      text: "text-red-700",
+      icon: XCircle,
+    },
+  };
+  return (
+    map[status] || {
+      bg: "bg-slate-50",
+      border: "border-l-4 border-slate-500",
+      text: "text-slate-700",
+      icon: FileText,
+    }
+  );
+};
+
+export const getProgramConfig = (nomePrograma) => {
+  if (nomePrograma === "Daqui") {
+    return {
+      bg: "bg-indigo-50",
+      border: "border-l-4 border-indigo-600",
+      text: "text-indigo-700",
+    };
+  }
+  if (nomePrograma?.startsWith("Especial")) {
+    return {
+      bg: "bg-purple-50",
+      border: "border-l-4 border-purple-600",
+      text: "text-purple-700",
+    };
+  }
+  return {
+    bg: "bg-indigo-50",
+    border: "border-l-4 border-indigo-600",
+    text: "text-indigo-700",
+  };
+};

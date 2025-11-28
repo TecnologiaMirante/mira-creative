@@ -281,8 +281,7 @@ export function PautaCardGrid({ pauta, onView, onEdit, onDelete }) {
         <StatusBadge status={pauta.status} />
 
         <TooltipProvider>
-          {/* Visível no mobile (opacity-100) e no hover do desktop (md:opacity-0 group-hover:opacity-100) */}
-          <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center gap-1 ">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -359,7 +358,6 @@ export function PautaCardGrid({ pauta, onView, onEdit, onDelete }) {
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
-                            console.log("Excluindo pauta...", pauta.id);
                             onDelete(pauta.id);
                           }}
                           className="bg-destructive hover:bg-destructive/90"

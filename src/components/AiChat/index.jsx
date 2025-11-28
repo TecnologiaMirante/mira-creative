@@ -273,13 +273,11 @@ export function AiChat() {
   }
 
   return (
-    <div className="p-6 h-full flex flex-col relative max-h-screen">
-      <div className="mb-6 shrink-0 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Pergunte ao Daqui
-          </h1>
-          <p className="text-muted-foreground">
+    <div className="p-8 space-y-8 h-full flex flex-col relative max-h-screen">
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold">Pergunte ao Daqui</h1>
+          <p className="text-lg text-muted-foreground">
             Assistente de IA para análise de pautas e roteiros
           </p>
         </div>

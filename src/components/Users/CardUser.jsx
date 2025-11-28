@@ -72,7 +72,7 @@ export function CardUser({ userTeam }) {
       );
     } catch (error) {
       console.error("Erro ao atualizar usuário: ", error);
-      toast.error("Falha ao atualizar o tipo de usuário.");
+      toast.error("Falha ao atualizar o tipo de usuário.", { duration: 1000 });
     }
   };
 

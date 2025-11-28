@@ -79,7 +79,7 @@ export function EditarProgramaModal({
     e.preventDefault();
 
     if (!user) {
-      toast.error("Usuário não autenticado.");
+      toast.error("Usuário não autenticado.", { duration: 1500 });
       return;
     }
 
@@ -102,7 +102,7 @@ export function EditarProgramaModal({
     try {
       const success = await updatePrograma(programa.id, programaData);
       if (success) {
-        toast.success("Programa atualizado com sucesso!");
+        toast.success("Programa atualizado com sucesso!", { duration: 1500 });
         onProgramaUpdated({ ...programa, ...programaData });
         onClose();
       } else {
@@ -111,6 +111,7 @@ export function EditarProgramaModal({
     } catch (error) {
       toast.error("Erro ao atualizar programa.", {
         description: error.message,
+        duration: 1500,
       });
     } finally {
       setIsSaving(false);

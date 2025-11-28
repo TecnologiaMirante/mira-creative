@@ -123,11 +123,14 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (dateValidationError) {
-      toast.error("Erro de Validação", { description: dateValidationError });
+      toast.error("Erro de Validação", {
+        description: dateValidationError,
+        duration: 1500,
+      });
       return;
     }
     if (!user) {
-      toast.error("Você não está autenticado.");
+      toast.error("Você não está autenticado."), { duration: 1500 };
       return;
     }
 
@@ -192,12 +195,13 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
         }
       }
 
-      toast.success("Pauta criada com sucesso!", { duration: 2000 });
+      toast.success("Pauta criada com sucesso!", { duration: 1500 });
       navigate(-1);
     } catch (error) {
       console.error("Erro ao salvar:", error);
       toast.error("Falha ao salvar.", {
         description: error.message || "Ocorreu um erro inesperado.",
+        duration: 1500,
       });
     } finally {
       setIsLoading(false);

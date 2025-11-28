@@ -80,6 +80,7 @@ export function ProgramasListPage() {
       loading: "Excluindo programa...",
       success: "Programa movido para a lixeira!", // O listener atualiza a UI
       error: "Falha ao excluir programa.",
+      duration: 1500,
     });
   };
 

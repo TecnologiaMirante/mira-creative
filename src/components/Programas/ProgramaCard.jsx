@@ -130,7 +130,7 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
         <CardFooter className="px-6 flex justify-between items-center">
           <StatusBadge status={programa.status} />
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center gap-1 ">
             <Button
               variant="ghost"
               size="icon"
