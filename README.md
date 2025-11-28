@@ -1,99 +1,151 @@
-# Mira Creative
+<div align="center">
+  <h1>🎬 Sistema Mira Creative</h1>
+  
+  <p>
+    <img src="https://img.shields.io/badge/status-active-success.svg" alt="Project Status">
+    <img src="https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB" alt="React">
+    <img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white" alt="Vite">
+    <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white" alt="TailwindCSS">
+    <img src="https://img.shields.io/badge/firebase-%23039BE5.svg?style=flat&logo=firebase" alt="Firebase">
+  </p>
+</div>
 
-Mira Creative é uma plataforma web robusta para gerenciamento de roteiros e produção audiovisual, desenvolvida com React e Vite, utilizando Firebase como backend e integrada com APIs de Inteligência Artificial para otimizar o fluxo de trabalho criativo.
+O **Mira Creative** é uma plataforma corporativa robusta para **Orquestração de Produção Audiovisual**.
+Desenvolvida para modernizar o fluxo de trabalho de emissoras e produtoras, a aplicação gerencia todo o ciclo editorial — desde a concepção de pautas até a exibição do roteiro — integrando inteligência artificial para otimização criativa.
+
+---
 
 ## ✨ Funcionalidades Principais
 
-- **Autenticação Robusta**: Acesso seguro e exclusivo para contas `@mirante.com.br` via Google. A sessão do usuário é verificada de forma inteligente no carregamento, proporcionando uma experiência de login fluida e sem "piscar" a tela.
-- **Dashboard de Roteiros**: Interface central com visualização em cards para criar, visualizar, filtrar, editar e excluir roteiros.
-- **Gerenciamento de Permissões**: Sistema de papéis (Administrador, Produtor, etc.) que controla o acesso a funcionalidades como edição e exclusão.
-- **Filtros Avançados**: Ferramentas poderosas para encontrar roteiros por status, produtor, apresentador, programa e localidade.
-- **Cronograma de Produção**: Calendário interativo (`FullCalendar`) que exibe as datas de gravação e exibição. Inclui tooltips ricos em informações ao passar o mouse sobre os eventos e filtros dinâmicos.
-- **Exportação para PDF**: Geração de documentos PDF profissionais e detalhados a partir dos roteiros, incluindo a logo da empresa.
+### 📊 Dashboard & Analytics
 
-### 🤖 Recursos de Inteligência Artificial
+Módulo de inteligência de dados com `Recharts` para visão estratégica em tempo real:
 
-- **Aprimoramento de Roteiros com IA**: Ferramenta integrada à API da OpenAI (`GPT`) que analisa o roteiro existente e sugere melhorias para o texto e para as descrições de vídeo, linha por linha.
-- **Assistente de Chat "Daqui"**: Chatbot integrado à API do Google Gemini (via `Firebase Cloud Function`) que responde a perguntas sobre os roteiros cadastrados, agindo como um especialista nos dados da plataforma.
+- **KPIs de Produção:** Total de pautas, taxa de aprovação e cancelamentos.
+- **Análise de Fluxo:** Status das pautas (Aprovado, Em Produção, etc.).
+- **Estrutura de Programação:** Comparativo entre programas de grade fixa e especiais.
+- **Evolução Temporal:** Volume de criação diária.
+- **Top Produtores:** Ranking de produtividade.
 
-## 🛠️ Tecnologias Utilizadas
+### 📝 Gestão Editorial
 
-- **Frontend**: React, Vite, Tailwind CSS
-- **Componentes UI**: Shadcn UI
-- **Roteamento**: React Router DOM
-- **Gerenciamento de Estado**: React Context API
-- **Backend & Infra**: Firebase (Authentication, Firestore, Cloud Functions)
-- **Inteligência Artificial**:
-  - **Google Gemini AI** (via Cloud Functions para Q&A)
-  - **OpenAI GPT** (via cliente para aprimoramento de roteiros)
-- **Linguagem**: JavaScript
+- **Arquitetura Relacional:** `Programas → Espelhos → Pautas → Roteiros` no Firestore.
+- **Visualização Flexível:** Kanban/List views para roteiros.
+- **Filtros Avançados:** Por produtor, apresentador, localidade e datas.
+- **Cronograma Interativo:** Agenda de produção com `FullCalendar`.
+- **Exportação para PDF:** Roteiros formatados para uso no set.
 
-## 🚀 Como Executar o Projeto Localmente
+### 🤖 Inteligência Artificial Integrada
 
-Para executar o projeto em seu ambiente de desenvolvimento, siga os passos abaixo.
+- **Copiloto Criativo (OpenAI GPT):** Sugere melhorias de texto e descrições técnicas.
+- **Assistente “Daqui” (Gemini):** Chatbot contextualizado nos dados da plataforma via Cloud Functions.
 
-### Pré-requisitos
+### 🔐 Segurança & Performance
 
-- **Node.js**: Versão 18 ou superior.
-- **Firebase CLI**: Necessário para testar as Cloud Functions localmente.
+- **Autenticação Corporativa:** Acesso restrito ao domínio `@mirante.com.br`.
+- **User Caching System:** Redução de consultas ao Firestore para perfis de usuário.
+- **RBAC (Role-Based Access Control):** Permissões por perfil (Admin, Produtor, Editor).
 
-### Instalação
+---
+
+## 🛠️ Stack Tecnológico
+
+### Frontend
+
+- **Framework:** React 18 + Vite
+- **UI:** Tailwind CSS, Shadcn UI, Lucide React
+- **Estado & Roteamento:** Context API, React Router DOM
+- **Visualização de Dados:** Recharts, FullCalendar
+- **Utilitários:** Date-fns, UUID
+
+### Backend & Infraestrutura
+
+- **Banco de Dados:** Google Firestore (NoSQL)
+- **Autenticação:** Firebase Authentication
+- **Serverless:** Firebase Cloud Functions (Node.js/Python)
+- **Serviços de IA:** OpenAI SDK, Google Vertex AI (Gemini)
+
+---
+
+## 🚀 Instalação e Execução
+
+### 📌 Pré-requisitos
+
+- Node.js **v18+**
+- NPM **ou** Yarn
+
+### 📥 Passos para Execução
 
 1.  **Clone o repositório:**
 
-    ```bash
-    git clone <URL_DO_SEU_REPOSITORIO>
-    cd mira-creative
-    ```
+```bash
+git clone https://github.com/seu-usuario/mira-creative.git
+cd mira-creative
+```
 
-2.  **Instale as dependências do projeto:**
+2.  **Instale as dependências:**
 
-    ```bash
-    npm install
-    ```
+```bash
+npm install
+```
 
 3.  **Configure as variáveis de ambiente:**
-    Crie um arquivo `.env` na raiz do projeto e adicione as chaves de configuração do seu projeto Firebase. Você pode encontrá-las no console do Firebase em `Configurações do projeto > Suas apps > Configuração do SDK`.
-    Adicione também as chaves para a API da OpenAI.
+    Crie um arquivo `.env` na raiz do projeto e adicione as seguintes chaves:
 
-    ```env
-    # Firebase
-    VITE_FIREBASE_API_KEY="SUA_API_KEY"
-    VITE_FIREBASE_AUTH_DOMAIN="SEU_AUTH_DOMAIN"
-    VITE_FIREBASE_PROJECT_ID="SEU_PROJECT_ID"
-    VITE_FIREBASE_STORAGE_BUCKET="SEU_STORAGE_BUCKET"
-    VITE_FIREBASE_MESSAGING_SENDER_ID="SEU_MESSAGING_SENDER_ID"
-    VITE_FIREBASE_APP_ID="SEU_APP_ID"
+```env
+# Firebase Configuration
+VITE_FIREBASE_API_KEY="..."
+VITE_FIREBASE_AUTH_DOMAIN="..."
+VITE_FIREBASE_PROJECT_ID="..."
+VITE_FIREBASE_STORAGE_BUCKET="..."
+VITE_FIREBASE_MESSAGING_SENDER_ID="..."
+VITE_FIREBASE_APP_ID="..."
 
-    # OpenAI
-    VITE_API_KEY_OPENAI="SUA_CHAVE_DE_API_DA_OPENAI"
-    VITE_API_ORG_OPENAI="SEU_ID_DE_ORGANIZACAO_DA_OPENAI"
-    VITE_API_PROJECT_OPENAI="SEU_ID_DE_PROJETO_DA_OPENAI"
-    ```
+# AI Services
+VITE_API_KEY_OPENAI="..."
+VITE_API_ORG_OPENAI="..."
+```
 
-4.  **Execute o servidor de desenvolvimento:**
+4.  **Inicie o servidor de desenvolvimento:**
 
-    ```bash
-    npm run dev
-    ```
+```bash
+npm run dev
+```
 
-A aplicação estará disponível em `http://localhost:5173`.
+👉 Acesse em: **[http://localhost:5173](http://localhost:5173)**
 
-## 📂 Estrutura do Projeto
+---
+
+## 📂 Estrutura de Pastas
+
+```bash
+src/                     # Código fonte do Frontend
+├── components/          # Componentes React reutilizáveis
+│   ├── reports/         # Gráficos e widgets do dashboard (Recharts)
+│   ├── pautas/          # Componentes relacionados a pautas
+│   ├── ui/              # Componentes base da UI (Shadcn)
+│   └── ...
+├── context/             # Provedores de Context API
+│   ├── AuthContext.jsx  # Gerencia autenticação e sessão do usuário
+│   └── UserContext.jsx  # Cache de perfis de usuário
+├── lib/                 # Funções utilitárias e configuração do Firebase
+├── pages/               # Componentes de página (rotas)
+└── main.jsx             # Ponto de entrada da aplicação React
+
+functions/               # Código fonte do Backend (Cloud Functions)
+```
+
+---
+
+## 📄 Licença
+
+🚨 **Projeto proprietário – uso exclusivo interno.**
+Todos os direitos reservados.
+
+---
+
+> Desenvolvido com 💙 pela equipe de Engenharia e Produto da **Mira Creative**.
 
 ```
-├── src/
-│   ├── components/
-│   │   ├── Card/         # Formulários e visualização de roteiros
-│   │   ├── Dashboard/    # Dashboard, filtros, estatísticas
-│   │   ├── AiChat/       # Assistente de IA
-│   │   ├── AppSidebar/   # Barra lateral de navegação
-│   │   └── ui/           # Componentes reutilizáveis (Button, Card, etc)
-│   ├── context/          # Contexto de usuário
-│   ├── functions/        # Funções utilitárias
-│   ├── hooks/            # Hooks customizados
-│   ├── lib/              # Utilidades (ex: cn)
-│   ├── pages/            # Páginas principais (Home, Login)
-│   └── assets/           # Imagens e outros recursos estáticos
-└── functions/            # Código das Firebase Cloud Functions
+
 ```
