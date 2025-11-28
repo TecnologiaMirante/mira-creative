@@ -38,6 +38,8 @@ import {
   formatSegundos,
 } from "@/lib/utils";
 import { useUserCache } from "@/context/UserCacheContext";
+import { useContext } from "react";
+import UserContext from "@/context/UserContext";
 
 const InfoItem = ({ icon: Icon, children }) => (
   <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -60,6 +62,8 @@ const StatusBadge = ({ status }) => {
 
 // --- Card Principal ---
 export function ProgramaCard({ programa, onDelete, onEdit }) {
+  const { user } = useContext(UserContext);
+
   const programStyle = getProgramStyle(programa.nome);
   const { getUserById, isLoadingCache } = useUserCache();
 
@@ -89,7 +93,6 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
           </CardHeader>
 
           {/* Conteúdo: Informações principais */}
-          {/* <CardContent className="p-0 space-y-3 flex-grow"> */}
           <CardContent className="pb-4 space-y-3 flex-grow border-b border-slate-100">
             {/* EXIBIÇÃO */}
             <InfoItem icon={CalendarDays}>
@@ -131,45 +134,50 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
           <StatusBadge status={programa.status} />
 
           <div className="flex items-center gap-1 ">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-slate-500 hover:text-indigo-600"
-              onClick={() => onEdit(programa)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+            {user?.typeUser !== "Visualizador" && (
+              <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                  className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                  onClick={() => onEdit(programa)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Edit className="h-4 w-4" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir este programa?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. O programa será movido para
-                    a lixeira.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDelete(programa.id)}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    Sim, Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
 
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Excluir este programa?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. O programa será movido
+                        para a lixeira.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(programa.id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Sim, Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
             <Link
               to={`/home/programas/${programa.id}`}
               className="flex items-center text-sm font-medium text-indigo-600 p-2 rounded-md hover:bg-indigo-50"

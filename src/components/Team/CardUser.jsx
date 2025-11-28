@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
-import { Userdialog } from "./UserDialog";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { Badge } from "../ui/badge";
@@ -12,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useContext } from "react";
 import UserContext from "@/context/UserContext";
 import { getUsersBadgeClasses } from "@/lib/utils";
+import { Userdialog } from "./UserDialog";
 
 export function CardUser({ userTeam }) {
   const { user: user } = useContext(UserContext);

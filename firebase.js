@@ -104,14 +104,9 @@ const signInWithGoogle = async () => {
         photoURL: user.photoURL,
         email: user.email,
         creationTime: formattedDate,
-        typeUser: "user",
+        typeUser: "Visualizador",
       });
-
-      console.log("Usuário criado na Firestore");
-    } else {
-      console.log("Usuário já existe na Firestore");
     }
-
     const userData = await getUserData();
     const token = await user.getIdToken();
 
@@ -494,7 +489,6 @@ const updatePauta = async (pautaId, pautaData, userId) => {
 
 const deletePauta = async (pautaId) => {
   try {
-    console.log("Deletando pauta com ID:", pautaId);
     const pautaRef = doc(db, "pautas", pautaId);
     await updateDoc(pautaRef, {
       isVisible: false,
@@ -863,7 +857,6 @@ const enviarNotificacaoEdicao = async (
 const logout = async (navigate) => {
   try {
     await signOut(auth);
-    console.log("Deslogando...");
     if (navigate) navigate("/login");
   } catch (error) {
     console.error("Erro ao deslogar:", error);

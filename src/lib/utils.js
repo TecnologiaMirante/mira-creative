@@ -59,10 +59,6 @@ export const getUsersBadgeClasses = (status) => {
   const statusMap = {
     Administrador:
       "bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd] hover:bg-[#dbeafe]",
-    Produtor:
-      "bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] hover:bg-[#fef3c7]",
-    Apresentador:
-      "bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7] hover:bg-[#d1fae5]",
     Visualizador:
       "bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5] hover:bg-[#fee2e2]",
   };

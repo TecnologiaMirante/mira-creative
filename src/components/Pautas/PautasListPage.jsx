@@ -1,6 +1,6 @@
 // /src/components/pautas/PautasListPage.jsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { deletePauta, listenToPautas } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
@@ -12,6 +12,7 @@ import { PautaCardGrid } from "./PautaCardGrid";
 import { useUserCache } from "@/context/UserCacheContext";
 import { Label } from "@/components/ui/label";
 import Select from "react-select";
+import UserContext from "@/context/UserContext";
 
 const statusOptions = [
   { value: "all", label: "Todos os Status" },
@@ -29,6 +30,8 @@ const programsOptions = [
 ];
 
 export function PautasListPage() {
+  const { user } = useContext(UserContext);
+
   const [allPautas, setAllPautas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -98,7 +101,6 @@ export function PautasListPage() {
   }, [allPautas, filters]); // Recalcula SÓ se a lista inteira ou os filtros mudarem
 
   const handleDeletePauta = async (pautaId) => {
-    console.log("oi");
     toast.promise(deletePauta(pautaId), {
       loading: "Excluindo pauta...",
       success: "Pauta movida para a lixeira!",
@@ -132,12 +134,14 @@ export function PautasListPage() {
             Todas as pautas cadastradas no sistema
           </p>
         </div>
-        <Button
-          className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
-          onClick={() => navigate("/home/pautas/create")}
-        >
-          <Plus className="h-4 w-4" /> Cadastrar Pauta
-        </Button>
+        {user?.typeUser !== "Visualizador" && (
+          <Button
+            className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
+            onClick={() => navigate("/home/pautas/create")}
+          >
+            <Plus className="h-4 w-4" /> Cadastrar Pauta
+          </Button>
+        )}
       </div>
       {/* FILTROS */}
       <Card className="p-4">

@@ -38,16 +38,13 @@ export function Userdialog({ user, onSave }) {
           variant="ghost"
           size="icon"
           className="h-6 w-6 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          onClick={stopPropagation} 
+          onClick={stopPropagation}
         >
           <Edit className="h-3 w-3" />
         </Button>
       </DialogTrigger>
 
-      <DialogContent
-        className="sm:max-w-[425px]"
-        onClick={stopPropagation}
-      >
+      <DialogContent className="sm:max-w-[425px]" onClick={stopPropagation}>
         <DialogHeader>
           <DialogTitle>Editar Usuário</DialogTitle>
           <DialogDescription>
@@ -84,8 +81,6 @@ export function Userdialog({ user, onSave }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Administrador">Administrador</SelectItem>
-                <SelectItem value="Produtor">Produtor</SelectItem>
-                <SelectItem value="Apresentador">Apresentador</SelectItem>
                 <SelectItem value="Visualizador">Visualizador</SelectItem>
               </SelectContent>
             </Select>

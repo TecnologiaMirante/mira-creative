@@ -1,6 +1,6 @@
 // /src/components/programas/ProgramasListPage.jsx
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { listenToProgramas, deletePrograma } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { ProgramaCard } from "./ProgramaCard";
@@ -12,6 +12,7 @@ import { EditarProgramaModal } from "./EditarProgramaModal";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import Select from "react-select";
+import UserContext from "@/context/UserContext";
 
 const statusOptions = [
   { value: "all", label: "Todos os Status" },
@@ -29,6 +30,8 @@ const programsOptions = [
 ];
 
 export function ProgramasListPage() {
+  const { user } = useContext(UserContext);
+
   const [allProgramas, setAllProgramas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -120,12 +123,14 @@ export function ProgramasListPage() {
               Selecione um programa para ver o espelho
             </p>
           </div>
-          <Button
-            className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus /> Criar Programa
-          </Button>
+          {user?.typeUser !== "Visualizador" && (
+            <Button
+              className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus /> Criar Programa
+            </Button>
+          )}
         </div>
 
         {/* FILTROS */}
@@ -183,7 +188,6 @@ export function ProgramasListPage() {
         onClose={() => setIsModalOpen(false)}
         onProgramaCreated={handleProgramaCreated}
       />
-
       {selectedPrograma && (
         <EditarProgramaModal
           isOpen={isEditModalOpen}

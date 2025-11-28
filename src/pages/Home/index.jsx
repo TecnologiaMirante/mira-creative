@@ -5,9 +5,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AiChat } from "@/components/AiChat";
 import { ScriptForm } from "@/components/Card/ScriptForm";
-import { CronogramaPage } from "@/components/CronogramaPage";
 import { useContext } from "react";
-import { Team } from "@/components/Team";
+import { Team } from "@/components/Team/Team";
 import UserContext from "@/context/UserContext";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ProgramasListPage } from "@/components/Programas/ProgramasListPage";
@@ -15,6 +14,7 @@ import { ProgramaDetailPage } from "@/components/Programas/ProgramaDetailPage";
 import { PautaDetailPage } from "@/components/Pautas/PautaDetailPage";
 import { PautasListPage } from "@/components/Pautas/PautasListPage";
 import { ReportsPage } from "@/components/Reports/ReportsPage";
+import { CronogramaPage } from "@/components/CronogramaPage/CronogramaPage";
 
 function MainContent() {
   const navigate = useNavigate();

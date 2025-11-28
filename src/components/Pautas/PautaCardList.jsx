@@ -47,6 +47,8 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { useUserCache } from "@/context/UserCacheContext";
+import UserContext from "@/context/UserContext";
+import { useContext } from "react";
 
 const InfoItem = ({ icon: Icon, children }) => (
   <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -86,6 +88,7 @@ export function PautaCardList({
   dndListeners,
   dndAttributes,
 }) {
+  const { user } = useContext(UserContext);
   const { getUserById, isLoadingCache } = useUserCache();
   const produtor = getUserById(pauta.produtorId);
   const apresentador = getUserById(pauta.apresentadorId);
@@ -133,7 +136,7 @@ export function PautaCardList({
               </CardTitle>
 
               {/* ALÇA DE DRAG-AND-DROP */}
-              {dndListeners && (
+              {user?.typeUser !== "Visualizador" && dndListeners && (
                 <button
                   {...dndAttributes}
                   {...dndListeners}
@@ -247,67 +250,72 @@ export function PautaCardList({
           <StatusBadge status={pauta.status} />
           <TooltipProvider>
             <div className="flex items-center gap-1">
-              {/* EDITAR PAUTA */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-500 hover:text-indigo-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(pauta);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>{" "}
-                <TooltipContent>
-                  <p>Editar pauta</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* REMOVER PAUTA */}
-              <Tooltip>
-                <AlertDialog>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
+              {user?.typeUser !== "Visualizador" && (
+                <>
+                  {/* EDITAR PAUTA */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                        className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(pauta);
+                        }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Editar pauta</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                  <TooltipContent>
-                    <p>Remover pauta</p>
-                  </TooltipContent>
+                  {/* REMOVER PAUTA */}
+                  <Tooltip>
+                    <AlertDialog>
+                      <TooltipTrigger asChild>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                      </TooltipTrigger>
 
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Remover Pauta do Espelho?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação irá remover a pauta deste espelho, mas não irá
-                        excluí-la. Você poderá adicioná-la novamente mais tarde.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onRemove(pauta.id)}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Continuar e Remover
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </Tooltip>
+                      <TooltipContent>
+                        <p>Remover pauta</p>
+                      </TooltipContent>
+
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Remover Pauta do Espelho?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação irá remover a pauta deste espelho, mas não
+                            irá excluí-la. Você poderá adicioná-la novamente
+                            mais tarde.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onRemove(pauta.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Continuar e Remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </Tooltip>
+                </>
+              )}
 
               {/* Ver Pauta */}
               <Link

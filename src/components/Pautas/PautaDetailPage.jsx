@@ -23,10 +23,10 @@ import { useUserCache } from "@/context/UserCacheContext";
 import { exportScriptToPDF } from "@/lib/exportUtils";
 
 export function PautaDetailPage() {
+  const { user } = useContext(UserContext);
   const { id: pautaId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useContext(UserContext);
   const { getUserById } = useUserCache();
 
   const mode = location.pathname.includes("/edit") ? "edit" : "view";
@@ -681,14 +681,16 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
         </div>
 
         <div className="flex flex-row gap-2">
-          <Button
-            variant="outline"
-            className="gap-2 border-slate-300"
-            onClick={() => navigate(`/home/pautas/edit/${pautaId}`)}
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
+          {user?.typeUser !== "Visualizador" && (
+            <Button
+              variant="outline"
+              className="gap-2 border-slate-300"
+              onClick={() => navigate(`/home/pautas/edit/${pautaId}`)}
+            >
+              <Edit className="h-4 w-4" />
+              Editar
+            </Button>
+          )}
           <Button
             variant="outline"
             className="gap-2 border-slate-300"

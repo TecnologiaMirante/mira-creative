@@ -44,7 +44,9 @@ Módulo de inteligência de dados com `Recharts` para visão estratégica em tem
 
 - **Autenticação Corporativa:** Acesso restrito ao domínio `@mirante.com.br`.
 - **User Caching System:** Redução de consultas ao Firestore para perfis de usuário.
-- **RBAC (Role-Based Access Control):** Permissões por perfil (Admin, Produtor, Editor).
+- **RBAC (Role-Based Access Control):** Permissões por perfil de usuário. Os principais tipos são:
+  - **Administrador:** Acesso total ao sistema, incluindo criação, edição e exclusão de todos os dados e gerenciamento de usuários.
+  - **Visualizador:** Acesso somente leitura, ideal para consulta de informações sem risco de alterações.
 
 ---
 
@@ -144,7 +146,7 @@ Todos os direitos reservados.
 
 ---
 
-> Desenvolvido com 💙 pela equipe de Engenharia e Produto da **Mira Creative**.
+> Desenvolvido com 💙 pela equipe de Desenvolvimento e Dados da **Mira Creative**.
 
 ```
 
