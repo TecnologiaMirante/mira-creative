@@ -13,7 +13,6 @@ import {
   createEspelho,
 } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
-import { AdicionarPautaModal } from "../pautas/AdicionarPautaModal";
 import {
   FileText,
   Plus,
@@ -45,6 +44,7 @@ import {
 } from "@/lib/utils";
 import UserContext from "@/context/UserContext";
 import { SortablePautaCard } from "../Pautas/SortablePautaCard";
+import { AdicionarPautaModal } from "../Pautas/AdicionarPautaModal";
 
 export function ProgramaDetailPage() {
   const { id: programaId } = useParams();
