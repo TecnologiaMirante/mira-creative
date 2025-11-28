@@ -1,4 +1,4 @@
-// /src/components/Card/BasicInfoCardindex.jsx
+// /src/components/Card/BasicInfoCard.jsx
 
 import Select from "react-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,16 +11,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
-import { AlertTriangle, CalendarIcon } from "lucide-react";
+import { AlertTriangle, CalendarIcon, Link2Off, Loader2 } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "../ui/switch";
-
-// --- Opções para os seletores ---
-const programsOptions = [
-  { value: "Daqui", label: "Daqui" },
-  { value: "Especial", label: "Especial" },
-];
+import { getPrograma, removePautaFromEspelho } from "../../../firebase";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 
 const statusOptions = [
   { value: "Aprovado", label: "Aprovado" },
@@ -35,7 +42,7 @@ const customSelectStyles = {
     ...provided,
     minHeight: "40px",
     height: "40px",
-    boxShadow: state.isFocused ? "0 0 0 2px #e0e7ff" : "none", // Anel de foco suave
+    boxShadow: state.isFocused ? "0 0 0 2px #e0e7ff" : "none",
     borderColor: state.isFocused ? "#a5b4fc" : "#d1d5db",
     "&:hover": {
       borderColor: "#a5b4fc",
@@ -81,13 +88,42 @@ export function BasicInfoCard({
   isReadOnly = false,
 }) {
   const { userCache, isLoadingCache = true } = useUserCache() || {};
-  const [isRangeMode, setIsRangeMode] = useState(
-    () => !!formData.dataGravacaoFim
-  );
+  const [isRangeMode, setIsRangeMode] = useState(!!formData.dataGravacaoFim);
+
+  const [nomePrograma, setNomePrograma] = useState("Carregando...");
+  const [isUnlinking, setIsUnlinking] = useState(false);
 
   useEffect(() => {
-    setIsRangeMode(!!formData.dataGravacaoFim);
-  }, [formData.dataGravacaoFim]);
+    const fetchNome = async () => {
+      if (!formData?.programaId) {
+        setNomePrograma("Programa não vinculado");
+        return;
+      }
+
+      const programaData = await getPrograma(formData.programaId);
+
+      if (programaData) {
+        setNomePrograma(programaData.nome);
+      } else {
+        setNomePrograma("Programa não encontrado");
+      }
+    };
+
+    fetchNome();
+  }, [formData.programaId]); // Só roda se o ID mudar
+
+  useEffect(
+    () => setIsRangeMode(!!formData.dataGravacaoFim),
+    [formData.dataGravacaoFim]
+  );
+
+  const userOptions = useMemo(() => {
+    if (isLoadingCache || !userCache) return []; // Proteção contra 'undefined'
+    return [...userCache.values()].map((user) => ({
+      value: user.uid,
+      label: user.display_name,
+    }));
+  }, [userCache, isLoadingCache]);
 
   const selectedDate = useMemo(() => {
     if (isRangeMode) {
@@ -98,14 +134,6 @@ export function BasicInfoCard({
     }
     return formData.dataGravacaoInicio || null;
   }, [formData.dataGravacaoInicio, formData.dataGravacaoFim, isRangeMode]);
-
-  const userOptions = useMemo(() => {
-    if (isLoadingCache || !userCache) return []; // Proteção contra 'undefined'
-    return [...userCache.values()].map((user) => ({
-      value: user.uid,
-      label: user.display_name,
-    }));
-  }, [userCache, isLoadingCache]);
 
   const handleDateSelect = (value) => {
     if (isRangeMode) {
@@ -121,6 +149,38 @@ export function BasicInfoCard({
   const handleRangeToggle = (isRange) => {
     setIsRangeMode(isRange);
     onFormChange("dataGravacao", null); // Limpa as datas
+  };
+
+  const handleUnlink = async () => {
+    if (!formData.programaId || !formData.espelhoId) {
+      toast.error("Dados incompletos para desvincular."), { duration: 1500 };
+      return;
+    }
+
+    setIsUnlinking(true);
+    try {
+      const success = await removePautaFromEspelho(
+        formData.espelhoId,
+        formData,
+        formData.programaId
+      );
+
+      if (success) {
+        toast.success("Pauta desvinculada do programa com sucesso!", {
+          duration: 1500,
+        });
+        onFormChange("programaId", null);
+        onFormChange("espelhoId", null);
+        setNomePrograma("Programa não vinculado");
+      } else {
+        toast.error("Erro ao desvincular pauta."), { duration: 1500 };
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Ocorreu um erro interno."), { duration: 1500 };
+    } finally {
+      setIsUnlinking(false);
+    }
   };
 
   const renderLabel = () => {
@@ -158,28 +218,55 @@ export function BasicInfoCard({
           Informações Básicas
         </CardTitle>
       </CardHeader>
+      <div className="px-6 pb-2">
+        <div className="p-4 bg-slate-100 border rounded-lg space-y-2">
+          <p className="text-sm text-slate-600">
+            <span className="font-semibold text-slate-800">Programa:</span>{" "}
+            {nomePrograma}
+          </p>
+        </div>
+        {/* Botão de Desvincular (Só aparece se tiver programaId) */}
+        {formData.programaId && !isReadOnly && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isUnlinking}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2"
+                title="Desvincular do Programa"
+              >
+                {isUnlinking ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Link2Off className="h-4 w-4 mr-1" />
+                )}
+                Desvincular
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Desvincular Programa</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja remover esta pauta do programa? Isso
+                  afetará a duração e o espelho do programa.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleUnlink}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Sim, Desvincular
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-          {/* PROGRAMA */}
-          <div className="space-y-2 md:col-span-2 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-            <Label htmlFor="program" className="font-semibold text-indigo-800">
-              Programa
-            </Label>
-            <Select
-              inputId="program"
-              options={programsOptions}
-              styles={customSelectStyles}
-              value={
-                programsOptions.find((o) => o.value === formData.program) ||
-                null
-              }
-              onChange={(selected) => onFormChange("program", selected.value)}
-              placeholder="Selecione o programa"
-              isDisabled={isReadOnly}
-              required
-            />
-          </div>
-
           {/* Pauta */}
           <div className="space-y-2">
             <Label htmlFor="titulo">Título da Pauta</Label>
@@ -286,10 +373,11 @@ export function BasicInfoCard({
               }
               onChange={(selected) => {
                 onFormChange("cidade", selected.value);
-                if (selected.value === "MARANHÃO") {
+                if (
+                  selected.value === "MARANHÃO" &&
+                  formData.bairro !== "TODOS"
+                ) {
                   onFormChange("bairro", "TODOS");
-                } else {
-                  onFormChange("bairro", "");
                 }
               }}
               placeholder="Selecione a cidade"
@@ -309,7 +397,7 @@ export function BasicInfoCard({
                   onCheckedChange={(checked) =>
                     onFormChange("bairro", checked ? "TODOS" : "")
                   }
-                  disabled={isReadOnly || formData.cidade === "MARANHÃO"}
+                  disabled={isReadOnly}
                 />
                 <Label
                   htmlFor="todosBairros"
@@ -364,7 +452,7 @@ export function BasicInfoCard({
                 <Calendar
                   mode={isRangeMode ? "range" : "single"}
                   selected={selectedDate}
-                  onSelect={handleDateSelect} // <-- Corrigido
+                  onSelect={handleDateSelect}
                   disabled={isReadOnly}
                   initialFocus
                   locale={ptBR}
@@ -430,7 +518,7 @@ export function BasicInfoCard({
                 onChange={(e) => onFormChange("duracaoMinutos", e.target.value)}
                 onBlur={(e) =>
                   handleTimeChange("duracaoMinutos", e.target.value)
-                } // Formata ao sair
+                }
                 className="w-20 text-center"
                 readOnly={isReadOnly}
               />
@@ -445,7 +533,7 @@ export function BasicInfoCard({
                 }
                 onBlur={(e) =>
                   handleTimeChange("duracaoSegundos", e.target.value)
-                } // Formata ao sair
+                }
                 max={59} // Segundos não podem passar de 59
                 className="w-20 text-center"
                 readOnly={isReadOnly}
@@ -481,7 +569,7 @@ export function BasicInfoCard({
                 {/* Data do Cancelamento */}
                 <div className="space-y-2">
                   <Label
-                    htmlFor="dataCancelamento-popover" // Mudei htmlFor
+                    htmlFor="dataCancelamento-popover"
                     className="font-semibold text-red-800"
                   >
                     Data do Cancelamento
@@ -490,7 +578,7 @@ export function BasicInfoCard({
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
-                        id="dataCancelamento-popover" // Mudei ID
+                        id="dataCancelamento-popover"
                         disabled={isReadOnly}
                         className={`w-full justify-start text-left bg-red-50 font-normal ${
                           !formData.dataCancelamento

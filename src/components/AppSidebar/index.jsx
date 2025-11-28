@@ -92,8 +92,8 @@ const SidebarContents = () => {
 
   const toolsMenuItems = [
     { title: "Equipe", icon: Users, id: "team" },
-    { title: "Cronograma", icon: Calendar, id: "schedule" },
-    { title: "Relatórios", icon: BarChart3, id: "reports" },
+    { title: "Cronograma", icon: Calendar, id: "cronograma" },
+    { title: "Dashboard", icon: BarChart3, id: "dashboard" },
   ];
 
   return (
@@ -101,7 +101,7 @@ const SidebarContents = () => {
       <SidebarToggle />
       {/* Sidebar Header*/}
       <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 bg-[#2563eb] rounded-lg flex items-center justify-center flex-shrink-0">
           <FileText className="h-6 w-6 text-primary-foreground" />
         </div>
         <div
@@ -119,27 +119,15 @@ const SidebarContents = () => {
       </SidebarHeader>
       {/* Sidebar content*/}
       <SidebarContent className="px-2 py-4">
+        {/* Sidebar Menu PRINCIPAL*/}
         {!isCollapsed && (
           <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
             Principal
           </SidebarGroupLabel>
         )}
-
-        {/* Sidebar Menu PRINCIPAL*/}
         <SidebarMenu>
           {mainMenuItems.map((item) => (
             <SidebarMenuItem key={item.id}>
-              {/* <Link
-                to={`/home/${item.id}`}
-                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
-                  isCollapsed ? "justify-center" : "justify-start"
-                } ${
-                  location.pathname.endsWith(item.id) ||
-                  (location.pathname === "/home" && item.id === "dashboard")
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
-              > */}
               <Link
                 to={`/home/${item.id}`}
                 className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
@@ -147,7 +135,7 @@ const SidebarContents = () => {
                 } ${
                   location.pathname.startsWith(`/home/${item.id}`) ||
                   (location.pathname === "/home" && item.id === "programas")
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-[#2563eb] text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
@@ -165,38 +153,36 @@ const SidebarContents = () => {
         </SidebarMenu>
 
         {/* Sidebar Menu FERRAMENTAS*/}
-        <SidebarGroup className="mt-6">
-          {!isCollapsed && (
-            <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
-              Ferramentas
-            </SidebarGroupLabel>
-          )}
-          <SidebarMenu>
-            {toolsMenuItems.map((item) => (
-              <SidebarMenuItem key={item.id}>
-                <Link
-                  to={`/home/${item.id}`}
-                  className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
-                    isCollapsed ? "justify-center" : "justify-start"
-                  } ${
-                    location.pathname.endsWith(item.id)
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`}
+        {!isCollapsed && (
+          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+            Ferramentas
+          </SidebarGroupLabel>
+        )}
+        <SidebarMenu>
+          {toolsMenuItems.map((item) => (
+            <SidebarMenuItem key={item.id}>
+              <Link
+                to={`/home/${item.id}`}
+                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
+                  isCollapsed ? "justify-center" : "justify-start"
+                } ${
+                  location.pathname.startsWith(`/home/${item.id}`)
+                    ? "bg-[#2563eb] text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span
+                  className={
+                    isCollapsed ? "sr-only" : "font-medium whitespace-nowrap"
+                  }
                 >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span
-                    className={
-                      isCollapsed ? "sr-only" : "font-medium whitespace-nowrap"
-                    }
-                  >
-                    {item.title}
-                  </span>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+                  {item.title}
+                </span>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarContent>
       {/* Sidebar Footer*/}
       <SidebarFooter className="border-t border-sidebar-border">

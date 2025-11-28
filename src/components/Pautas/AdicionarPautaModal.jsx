@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Modal from "react-modal";
-import { getPautas } from "../../../firebase"; // Função que já criamos
+import { getPautas } from "../../../firebase";
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
@@ -28,7 +28,7 @@ function PautaDisponivelItem({ pauta, onAdd, isAdding }) {
         onClick={() => onAdd(pauta.id)}
         disabled={isAdding}
       >
-        <Plus className="h-4 w-4" /> Adicionar
+        <Plus className="h-4 w-4" /> Vincular
       </Button>
     </div>
   );
@@ -37,7 +37,6 @@ function PautaDisponivelItem({ pauta, onAdd, isAdding }) {
 export function AdicionarPautaModal({
   isOpen,
   onClose,
-  espelhoId,
   pautasAtuais,
   onPautaAdded,
 }) {
@@ -83,13 +82,13 @@ export function AdicionarPautaModal({
       isOpen={isOpen}
       onRequestClose={onClose}
       style={customStylesModal}
-      contentLabel="Adicionar Pauta ao Espelho"
+      contentLabel="Vincular Pauta ao Espelho"
       ariaHideApp={false}
     >
       <div className="flex flex-col">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">Adicionar Pauta</h2>
+          <h2 className="text-lg font-bold text-slate-800">Vincular Pauta</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -109,7 +108,7 @@ export function AdicionarPautaModal({
             <p>Carregando pautas...</p>
           ) : pautasDisponiveis.length === 0 ? (
             <p className="text-center text-slate-500 py-8">
-              Nenhuma pauta disponível para adicionar.
+              Nenhuma pauta disponível para vincular.
             </p>
           ) : (
             <div className="flex flex-col gap-2">

@@ -98,10 +98,12 @@ export function PautasListPage() {
   }, [allPautas, filters]); // Recalcula SÓ se a lista inteira ou os filtros mudarem
 
   const handleDeletePauta = async (pautaId) => {
+    console.log("oi");
     toast.promise(deletePauta(pautaId), {
       loading: "Excluindo pauta...",
       success: "Pauta movida para a lixeira!",
       error: "Falha ao excluir pauta.",
+      duration: 1500,
     });
   };
 
@@ -121,10 +123,13 @@ export function PautasListPage() {
   return (
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Pautas</h1>
+        <div className="flex flex-col justify-center items-start space-y-2">
+          <div className="flex items-center gap-2">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <h1 className="text-4xl font-bold">Pautas</h1>
+          </div>
           <p className="text-lg text-muted-foreground">
-            Todas as pautas cadastradas no sistema.
+            Todas as pautas cadastradas no sistema
           </p>
         </div>
         <Button
@@ -134,7 +139,6 @@ export function PautasListPage() {
           <Plus className="h-4 w-4" /> Cadastrar Pauta
         </Button>
       </div>
-
       {/* FILTROS */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,7 +217,6 @@ export function PautasListPage() {
           </div>
         </div>
       </Card>
-
       {filteredPautas.length === 0 ? (
         <Card className="p-12">
           <div className="text-center">
@@ -237,7 +240,6 @@ export function PautasListPage() {
             <PautaCardGrid
               key={pauta.id}
               pauta={pauta}
-              programaNome={pauta.program}
               onView={() => navigate(`/home/pautas/${pauta.id}`)}
               onEdit={() => navigate(`/home/pautas/edit/${pauta.id}`)}
               onDelete={handleDeletePauta}

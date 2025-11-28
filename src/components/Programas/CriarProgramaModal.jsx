@@ -37,24 +37,30 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
   const { user } = useContext(UserContext);
 
   const [nome, setNome] = useState("Daqui");
+  const [nomeEspecial, setNomeEspecial] = useState("");
   const [status, setStatus] = useState("Em Produção");
   const [dataExibicao, setDataExibicao] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!dataExibicao) {
-      toast.error("A data de exibição é obrigatória.");
-      return;
-    }
+
     if (!user) {
-      toast.error("Usuário não encontrado. Faça login novamente.");
+      toast.error("Usuário não encontrado. Faça login novamente.", {
+        duration: 1500,
+      });
       return;
     }
 
     setIsSaving(true);
+
+    const nomeFinal =
+      nome === "Especial" && nomeEspecial.trim() !== ""
+        ? `Especial - ${nomeEspecial.trim()}`
+        : nome;
+
     const programaData = {
-      nome,
+      nome: nomeFinal,
       status,
       dataExibicao,
       espelhoId: null, // Começa sem espelho
@@ -67,7 +73,7 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
     try {
       const newProgramaId = await createPrograma(programaData);
       if (newProgramaId) {
-        toast.success("Programa criado com sucesso!");
+        toast.success("Programa criado com sucesso!", { duration: 1500 });
 
         onProgramaCreated({
           id: newProgramaId,
@@ -80,7 +86,10 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
         throw new Error("Falha ao retornar ID do novo programa.");
       }
     } catch (error) {
-      toast.error("Erro ao criar programa.", { description: error.message });
+      toast.error("Erro ao criar programa.", {
+        description: error.message,
+        duration: 1500,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -120,6 +129,20 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
                 onChange={(selected) => setNome(selected.value)}
                 required
               />
+              {nome === "Especial" && (
+                <div className="space-y-2">
+                  <Label htmlFor="nome-especial">Nome do Especial</Label>
+                  <input
+                    id="nome-especial"
+                    type="text"
+                    placeholder="Ex: Natal 2025, Carnaval, 20 anos da emissora..."
+                    className="w-full border border-slate-300 rounded-md p-2"
+                    value={nomeEspecial}
+                    onChange={(e) => setNomeEspecial(e.target.value)}
+                    required={nome === "Especial"}
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="programa-status">Status</Label>

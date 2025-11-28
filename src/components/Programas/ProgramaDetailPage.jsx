@@ -9,6 +9,7 @@ import {
   updateEspelhoPautas,
   removePautaFromEspelho,
   addPautaToEspelho,
+  updateProgramaDuracao,
   createEspelho,
 } from "../../../firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
@@ -40,7 +41,8 @@ import { toast } from "sonner";
 import {
   convertTimestamp,
   getStatusStyle,
-  calcularDuracaoTotal,
+  calcularTotalEmSegundos,
+  formatSegundos,
 } from "@/lib/utils";
 import UserContext from "@/context/UserContext";
 
@@ -56,7 +58,14 @@ export function ProgramaDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingEspelho, setIsCreatingEspelho] = useState(false);
-  const duracaoTotal = useMemo(() => calcularDuracaoTotal(pautas), [pautas]);
+
+  // Calcula o total em segundos baseado nas pautas carregadas atualmente na tela
+  const totalSegundosCalculado = useMemo(
+    () => calcularTotalEmSegundos(pautas),
+    [pautas]
+  );
+
+  const duracaoVisual = formatSegundos(totalSegundosCalculado);
 
   // Sensor para D&D (para não ativar ao clicar em botões)
   const sensors = useSensors(
@@ -67,6 +76,7 @@ export function ProgramaDetailPage() {
     })
   );
 
+  // --- CARREGAMENTO DE DADOS ---
   useEffect(() => {
     if (!programaId) return;
     const fetchData = async () => {
@@ -90,16 +100,36 @@ export function ProgramaDetailPage() {
       setEspelho(espelhoData);
 
       const pautasData = await getPautasByIds(espelhoData.pautasOrdenadas);
+      // Reordena baseado no array do espelho
       const pautasOrdenadas = espelhoData.pautasOrdenadas
         .map((id) => pautasData.find((p) => p.id === id))
         .filter(Boolean);
 
-      setPautas(pautasOrdenadas); // 4. Define o estado local
+      setPautas(pautasOrdenadas);
       setIsLoading(false);
     };
 
     fetchData();
   }, [programaId]);
+
+  useEffect(() => {
+    // Só roda se já tiver carregado o programa e as pautas
+    if (!isLoading && programa && pautas.length >= 0) {
+      const totalReal = calcularTotalEmSegundos(pautas);
+      const totalNoBanco = programa.duracaoTotalSegundos || 0;
+
+      // Se houver diferença, atualiza o banco silenciosamente
+      if (totalReal !== totalNoBanco) {
+        console.log(
+          `Sincronizando duração: Banco(${totalNoBanco}) vs Real(${totalReal})`
+        );
+        updateProgramaDuracao(programa.id, totalReal).then(() => {
+          // Atualiza o estado local para refletir a mudança sem precisar recarregar
+          setPrograma((prev) => ({ ...prev, duracaoTotalSegundos: totalReal }));
+        });
+      }
+    }
+  }, [pautas, programa, isLoading]);
 
   const handleViewPauta = (pauta) => {
     navigate(`/home/pautas/${pauta.id}`);
@@ -111,14 +141,10 @@ export function ProgramaDetailPage() {
 
   const handleRemovePauta = async (pautaId) => {
     if (!espelho || !programa) return;
-
-    // 1. Encontre o objeto 'pauta' completo
     const pautaParaRemover = pautas.find((p) => p.id === pautaId);
     if (!pautaParaRemover) return;
 
     setIsSaving(true);
-
-    // 2. Passe o objeto 'pauta' inteiro
     const success = await removePautaFromEspelho(
       espelho.id,
       pautaParaRemover,
@@ -127,34 +153,26 @@ export function ProgramaDetailPage() {
 
     if (success) {
       setPautas((prevPautas) => prevPautas.filter((p) => p.id !== pautaId));
+      // Atualizamos o programa localmente também para feedback imediato
       setPrograma((prev) => ({
         ...prev,
-        pautaCount: prev.pautaCount - 1,
-        // Atualiza a duração localmente
-        duracaoTotalSegundos:
-          (prev.duracaoTotalSegundos || 0) -
-          ((parseInt(pautaParaRemover.duracaoMinutos, 10) || 0) * 60 +
-            (parseInt(pautaParaRemover.duracaoSegundos, 10) || 0)),
+        pautaCount: Math.max(0, (prev.pautaCount || 0) - 1),
       }));
-      toast.success("Pauta removida do espelho.");
+      toast.success("Pauta removida do espelho.", { duration: 1500 });
     } else {
-      toast.error("Erro ao remover pauta.");
+      toast.error("Erro ao remover pauta.", { duration: 1500 });
     }
     setIsSaving(false);
   };
 
   const handlePautaAdded = async (pautaId) => {
     if (!espelho || !programa) return;
-
-    // 1. Busque o objeto 'pauta' completo
     const pautasData = await getPautasByIds([pautaId]);
     if (pautasData.length === 0) {
-      toast.error("Erro ao buscar dados da pauta.");
+      toast.error("Erro ao buscar dados da pauta.", { duration: 1500 });
       return;
     }
     const pautaParaAdicionar = pautasData[0];
-
-    // 2. Passe o objeto 'pauta' inteiro
     const success = await addPautaToEspelho(
       espelho.id,
       pautaParaAdicionar,
@@ -166,33 +184,28 @@ export function ProgramaDetailPage() {
       setPrograma((prev) => ({
         ...prev,
         pautaCount: (prev.pautaCount || 0) + 1,
-        // Atualiza a duração localmente
-        duracaoTotalSegundos:
-          (prev.duracaoTotalSegundos || 0) +
-          ((parseInt(pautaParaAdicionar.duracaoMinutos, 10) || 0) * 60 +
-            (parseInt(pautaParaAdicionar.duracaoSegundos, 10) || 0)),
       }));
-      toast.success("Pauta adicionada ao espelho!");
+      toast.success("Pauta adicionada ao espelho!", { duration: 1500 });
     } else {
-      toast.error("Erro ao adicionar pauta.");
+      toast.error("Erro ao adicionar pauta.", { duration: 1500 });
     }
   };
 
   const handleCreateEspelho = async () => {
     if (!programa || !user) {
-      toast.error("Erro: Programa ou usuário não carregado.");
+      toast.error("Erro: Programa ou usuário não carregado.", {
+        duration: 1500,
+      });
       return;
     }
     setIsCreatingEspelho(true);
-
     const newEspelhoData = await createEspelho(programa.id, user.uid);
-
     if (newEspelhoData) {
       setEspelho(newEspelhoData);
       setPrograma((prev) => ({ ...prev, espelhoId: newEspelhoData.id }));
-      toast.success("Espelho criado com sucesso!");
+      toast.success("Espelho criado com sucesso!", { duration: 1500 });
     } else {
-      toast.error("Falha ao criar o espelho.");
+      toast.error("Falha ao criar o espelho.", { duration: 1500 });
     }
     setIsCreatingEspelho(false);
   };
@@ -210,7 +223,7 @@ export function ProgramaDetailPage() {
       setIsSaving(true);
       const pautaIds = newPautas.map((p) => p.id);
       await updateEspelhoPautas(espelho.id, pautaIds);
-      toast.success("Ordem do espelho salva!");
+      toast.success("Ordem do espelho salva!", { duration: 1500 });
       setIsSaving(false);
     }
   };
@@ -264,8 +277,6 @@ export function ProgramaDetailPage() {
     );
   };
 
-  const statusStyle = getStatusStyle(programa?.status);
-
   // 8. Renderização principal (com DndContext)
   return (
     <>
@@ -298,12 +309,12 @@ export function ProgramaDetailPage() {
                 {/* Contagem de Pautas */}
                 <div className="flex items-center gap-1.5">
                   <FileText className="h-4 w-4" />
-                  <span>{programa?.pautaCount ?? pautas.length} pauta(s)</span>
+                  <span>{pautas.length} pauta(s)</span>
                 </div>
                 {/* Duração Total */}
-                <div className="flex items-center gap-1.5 font-medium text-slate-600">
+                <div className="flex items-center gap-1.5 font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
                   <Clock className="h-4 w-4" />
-                  <span>Duração: {duracaoTotal}</span>
+                  <span>Duração: {duracaoVisual}</span>
                 </div>
               </div>
             </div>
@@ -327,12 +338,19 @@ export function ProgramaDetailPage() {
                 onClick={() => setIsModalOpen(true)}
               >
                 <Plus className="h-4 w-4 text-white" />
-                <span className="font-semibold">Adicionar Pauta</span>
+                <span className="font-semibold">Vincular Pauta</span>
               </Button>
               {/* Botão de Cadastrar */}
               <Button
                 variant="outline"
-                onClick={() => navigate("/home/pautas/create")}
+                onClick={() =>
+                  navigate("/home/pautas/create", {
+                    state: {
+                      espelhoId: espelho?.id,
+                      programaNome: programa?.nome,
+                    },
+                  })
+                }
                 className="gap-2 bg-white hover:text-blue-700 px-2 text-base text-blue-600"
               >
                 <Plus className="h-4 w-4 text-blue-600" />
@@ -359,7 +377,7 @@ export function ProgramaDetailPage() {
                     Nenhuma pauta no espelho
                   </h3>
                   <p className="text-muted-foreground">
-                    Clique em "Adicionar Pauta" para começar
+                    Clique em "Vincular Pauta" para começar
                   </p>
                 </div>
               </Card>
@@ -383,7 +401,6 @@ export function ProgramaDetailPage() {
       <AdicionarPautaModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        espelhoId={espelho?.id}
         pautasAtuais={pautas}
         onPautaAdded={handlePautaAdded}
       />

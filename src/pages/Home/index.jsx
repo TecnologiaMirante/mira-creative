@@ -14,6 +14,7 @@ import { ProgramasListPage } from "@/components/Programas/ProgramasListPage";
 import { ProgramaDetailPage } from "@/components/Programas/ProgramaDetailPage";
 import { PautaDetailPage } from "@/components/Pautas/PautaDetailPage";
 import { PautasListPage } from "@/components/Pautas/PautasListPage";
+import { ReportsPage } from "@/components/Reports/ReportsPage";
 
 function MainContent() {
   const navigate = useNavigate();
@@ -23,10 +24,7 @@ function MainContent() {
       <Routes>
         {/* --- ROTAS PRINCIPAIS --- */}
         <Route path="/" element={<Navigate to="programas" replace />} />
-        <Route
-          path="/dashboard"
-          element={<Navigate to="programas" replace />}
-        />
+        <Route path="/dashboard" element={<ReportsPage />} />
         <Route path="/programas" element={<ProgramasListPage />} />
         <Route path="/programas/:id" element={<ProgramaDetailPage />} />
 
@@ -47,7 +45,7 @@ function MainContent() {
 
         {/* --- OUTRAS ROTAS --- */}
         <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/schedule" element={<CronogramaPage />} />
+        <Route path="/cronograma" element={<CronogramaPage />} />
         <Route path="/team" element={<Team />} />
       </Routes>
     </main>

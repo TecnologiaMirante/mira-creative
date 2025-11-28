@@ -246,7 +246,7 @@ export function PautaCardList({
         <CardFooter className="px-6 flex justify-between items-center">
           <StatusBadge status={pauta.status} />
           <TooltipProvider>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-1">
               {/* EDITAR PAUTA */}
               <Tooltip>
                 <TooltipTrigger asChild>
