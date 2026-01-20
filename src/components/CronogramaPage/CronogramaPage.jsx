@@ -1,7 +1,5 @@
 // /src/components/CronogramaPage/index.jsx
 
-"use client";
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useUserCache } from "@/context/UserCacheContext";
 import FullCalendar from "@fullcalendar/react";
@@ -10,7 +8,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../../../firebase";
+import { db } from "../../../firebaseClient";
 import {
   ChevronLeft,
   ChevronRight,

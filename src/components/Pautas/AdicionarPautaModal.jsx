@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Modal from "react-modal";
-import { getPautas } from "../../../firebase";
+import { getPautas } from "@infra/firebase";
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
@@ -48,20 +48,38 @@ export function AdicionarPautaModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    const fetchPautas = async () => {
-      setIsLoading(true);
-      const pautasSoltas = await getPautas();
+    setIsLoading(true);
 
-      // Filtra as pautas que já estão no espelho (bom manter por segurança)
+    // Agora 'pautasSoltas' contém TODAS as pautas do banco
+    const unsubscribe = getPautas((todasAsPautas) => {
+      if (!todasAsPautas) {
+        setPautasDisponiveis([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Conjunto de IDs que JÁ estão neste espelho específico
       const idsPautasAtuais = new Set(pautasAtuais.map((p) => p.id));
-      const disponiveis = pautasSoltas.filter(
-        (p) => !idsPautasAtuais.has(p.id)
-      );
+
+      const disponiveis = todasAsPautas.filter((p) => {
+        // 1. Não pode estar na lista atual deste espelho
+        const naoEstaNesteEspelho = !idsPautasAtuais.has(p.id);
+
+        // 2. Não pode estar vinculado a NENHUM outro espelho (espelhoId deve ser null ou undefined)
+        const naoTemDono = !p.espelhoId;
+
+        return naoEstaNesteEspelho && naoTemDono;
+      });
 
       setPautasDisponiveis(disponiveis);
       setIsLoading(false);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
     };
-    fetchPautas();
   }, [isOpen, pautasAtuais]);
 
   const handleAddPauta = async (pautaId) => {

@@ -8,8 +8,11 @@ import {
   updateRoteiro,
   updatePauta,
   createRoteiro,
-  enviarNotificacaoEdicao,
-} from "../../../firebase";
+  emailEdicaoPauta,
+  notificarEdicaoPauta,
+  notificarCriacaoRoteiro,
+  notificarEdicaoRoteiro,
+} from "@infra/firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
 import UserContext from "@/context/UserContext";
 import { ArrowLeft, Save, FilePlus, FileDown, Edit } from "lucide-react";
@@ -484,6 +487,18 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
     return mudancas;
   };
 
+  // Função para pegar IDs de envolvidos na Pauta
+  const getInvolvedUserIds = (data) => {
+    const ids = [
+      data.produtorId,
+      data.apresentadorId,
+      data.roteiristaId,
+      // user.uid, // Descomentar se  quem criou também receba a notificação
+    ];
+    // Filtra IDs vazios/nulos e remove duplicatas
+    return [...new Set(ids.filter((id) => id))];
+  };
+
   // Handler de salvar
   const handleSaveChanges = async () => {
     if (!pauta || !user) {
@@ -519,6 +534,23 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
 
     const mudancas = detectarMudancas(pauta, originalPauta);
 
+    const labelDicionario = {
+      titulo: "Título",
+      produtorId: "Produtor",
+      apresentadorId: "Apresentador",
+      roteiristaId: "Roteirista",
+      cidade: "Cidade",
+      bairro: "Bairro",
+      dataGravacaoInicio: "Data de Gravação",
+      dataGravacaoFim: "Fim da Gravação",
+      dataExibicao: "Data de Exibição",
+      duracaoMinutos: "Duração",
+      duracaoSegundos: "Duração",
+      status: "Status",
+      motivoCancelamento: "Motivo do Cancelamento",
+      dataCancelamento: "Data do Cancelamento",
+    };
+
     // converte IDs para nomes bonitos
     const converterValor = (campo, valor) => {
       if (!valor) return "";
@@ -536,10 +568,20 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
 
     // montar o array FINAL de mudanças com antes/depois já convertidos
     const detalhesConvertidos = mudancas.map((campo) => ({
-      campo,
+      campo: labelDicionario[campo] || campo,
       antes: converterValor(campo, originalPauta[campo]),
       depois: converterValor(campo, pauta[campo]),
     }));
+
+    // Filtro extra: Remove duplicatas se "duracaoMinutos" e "duracaoSegundos" mudaram juntos
+    // para não aparecer "Duração, Duração" na notificação
+    const detalhesUnicos = detalhesConvertidos.filter(
+      (obj, index, self) =>
+        index === self.findIndex((t) => t.campo === obj.campo)
+    );
+
+    const userIdsParaNotificar = getInvolvedUserIds(pauta);
+    const userName = user.display_name || user.email || "Usuário";
 
     if (mudancas.length > 0) {
       const emails = [
@@ -550,8 +592,15 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
 
       const emailsUnicos = [...new Set(emails)];
 
+      notificarEdicaoPauta(
+        pauta,
+        userIdsParaNotificar,
+        userName,
+        detalhesUnicos
+      );
+
       if (emailsUnicos.length > 0) {
-        enviarNotificacaoEdicao(
+        emailEdicaoPauta(
           emailsUnicos,
           pauta.titulo,
           pauta.id,
@@ -582,6 +631,20 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
           if (!newRoteiroId) {
             throw new Error("Falha ao criar o novo roteiro.");
           }
+
+          const roteiroCriado = {
+            id: newRoteiroId,
+            pautaId: pauta.id,
+          };
+
+          // 🔔 NOTIFICAÇÃO DE CRIAÇÃO DE ROTEIRO
+          await notificarCriacaoRoteiro(
+            roteiroCriado,
+            pauta.titulo,
+            userIdsParaNotificar,
+            userName
+          );
+
           roteiroIdFinal = newRoteiroId;
           setRoteiro((prev) => ({ ...prev, id: roteiroIdFinal }));
 
@@ -589,6 +652,10 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
             pauta.id,
             { ...pautaDataToSave, roteiroId: roteiroIdFinal },
             user.uid
+          );
+
+          setOriginalPauta(
+            structuredClone({ ...pauta, roteiroId: roteiroIdFinal })
           );
 
           toast.success("Pauta e Roteiro criados e salvos!", {
@@ -613,6 +680,19 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
               duration: 1500,
             }
           );
+          await notificarEdicaoRoteiro(
+            {
+              id: roteiro.id,
+              pautaId: pauta.id,
+            },
+            pauta.titulo,
+            userIdsParaNotificar,
+            userName
+          );
+          setOriginalPauta(
+            structuredClone({ ...pauta, roteiroId: roteiroIdFinal })
+          );
+          navigate(-1);
         }
       } else {
         await toast.promise(updatePauta(pauta.id, pautaDataToSave, user.uid), {
@@ -621,6 +701,7 @@ ${JSON.stringify(scriptDataForAI, null, 2)}
           error: "Erro ao salvar pauta.",
           duration: 1500,
         });
+
         navigate(-1);
       }
     } catch (error) {

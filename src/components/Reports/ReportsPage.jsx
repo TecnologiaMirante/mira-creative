@@ -1,9 +1,7 @@
 // /src/components/reports/ReportsPage.jsx
 
-"use client";
-
 import { useState, useEffect, useMemo } from "react";
-import { db } from "../../../firebase";
+import { db } from "../../../firebaseClient";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useUserCache } from "@/context/UserCacheContext";
 import {

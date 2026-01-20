@@ -16,7 +16,11 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import { createPrograma } from "../../../firebase"; // Importe a função
+import {
+  createPrograma,
+  notificarCriacaoPrograma,
+  getUsers,
+} from "../../../firebaseClient";
 import UserContext from "@/context/UserContext";
 import { customStylesModal } from "@/lib/utils";
 
@@ -75,6 +79,25 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
       if (newProgramaId) {
         toast.success("Programa criado com sucesso!", { duration: 1500 });
 
+        // --- BLOCO DE NOTIFICAÇÃO ---
+        getUsers().then((todosUsuarios) => {
+          // Filtra para não mandar notificação pra você mesmo
+          const idsParaNotificar = todosUsuarios
+            .map((u) => u.uid)
+            .filter((uid) => uid !== user.uid);
+
+          if (idsParaNotificar.length > 0) {
+            // Precisamos adicionar o ID que acabou de ser criado ao objeto para o link funcionar
+            const programaComId = { ...programaData, id: newProgramaId };
+
+            notificarCriacaoPrograma(
+              programaComId,
+              idsParaNotificar,
+              user.display_name
+            );
+          }
+        });
+
         onProgramaCreated({
           id: newProgramaId,
           ...programaData,
@@ -95,6 +118,26 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (e.defaultPrevented) return;
+      if (e.target.type === "button") return;
+
+      const form = e.currentTarget;
+
+      // Verifica se o formulário é válido (respeita os 'required')
+      // O reportValidity() retorna true se ok, ou false se inválido (e mostra o balão de erro)
+      if (!form.reportValidity()) {
+        e.preventDefault(); // Impede qualquer outra ação
+        return; // Não envia
+      }
+
+      // Se estiver válido, força o envio
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -103,7 +146,7 @@ export function CriarProgramaModal({ isOpen, onClose, onProgramaCreated }) {
       contentLabel="Criar Novo Programa"
       ariaHideApp={false}
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
         <div className="flex flex-col">
           {/* Cabeçalho */}
           <div className="flex justify-between items-center p-4 border-b border-slate-200">

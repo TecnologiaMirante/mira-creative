@@ -5,7 +5,7 @@ import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../../../firebase";
+import { db } from "../../../firebaseClient";
 import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useContext } from "react";

@@ -15,7 +15,7 @@ import { AlertTriangle, CalendarIcon, Link2Off, Loader2 } from "lucide-react";
 import { useUserCache } from "@/context/UserCacheContext";
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "../ui/switch";
-import { getPrograma, removePautaFromEspelho } from "../../../firebase";
+import { getPrograma, removePautaFromEspelho } from "../../../firebaseClient";
 import { toast } from "sonner";
 import {
   AlertDialog,

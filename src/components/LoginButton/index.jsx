@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithGoogle } from "../../../firebase";
+import { signInWithGoogle } from "../../../firebaseClient";
 import UserContext from "../../context/UserContext";
 import { Button } from "../ui/button";
 

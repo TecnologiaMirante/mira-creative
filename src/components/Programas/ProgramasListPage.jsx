@@ -1,7 +1,7 @@
 // /src/components/programas/ProgramasListPage.jsx
 
 import { useState, useEffect, useMemo, useContext } from "react";
-import { listenToProgramas, deletePrograma } from "../../../firebase";
+import { getProgramas, deletePrograma } from "../../../firebaseClient";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { ProgramaCard } from "./ProgramaCard";
 import { Card } from "@/components/ui/card";
@@ -47,7 +47,7 @@ export function ProgramasListPage() {
   useEffect(() => {
     setIsLoading(true);
     // Chama o listener SIMPLES
-    const unsubscribe = listenToProgramas((novosProgramas) => {
+    const unsubscribe = getProgramas((novosProgramas) => {
       setAllProgramas(novosProgramas); // Salva a lista completa
       setIsLoading(false);
     });

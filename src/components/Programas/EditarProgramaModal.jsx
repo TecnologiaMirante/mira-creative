@@ -16,7 +16,11 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import { updatePrograma } from "../../../firebase";
+import {
+  updatePrograma,
+  getUsers,
+  notificarEdicaoPrograma,
+} from "../../../firebaseClient";
 import UserContext from "@/context/UserContext";
 import { useUserCache } from "@/context/UserCacheContext";
 import { customStylesModal } from "@/lib/utils";
@@ -85,6 +89,20 @@ export function EditarProgramaModal({
 
     setIsSaving(true);
 
+    // ==============================================================
+    // COMPARAÇÃO
+    const oldStatus = programa.status;
+
+    // Tratamento de data: converte tudo para string simples (Ex: "Mon Jan 12 2026")
+    let oldDateString = null;
+    if (programa.dataExibicao) {
+      const dateObj = programa.dataExibicao.toDate
+        ? programa.dataExibicao.toDate()
+        : new Date(programa.dataExibicao);
+      oldDateString = dateObj.toDateString();
+    }
+    // ==============================================================
+
     const editor = getUserById(user.uid);
 
     const nomeFinal =
@@ -103,6 +121,54 @@ export function EditarProgramaModal({
       const success = await updatePrograma(programa.id, programaData);
       if (success) {
         toast.success("Programa atualizado com sucesso!", { duration: 1500 });
+
+        // ==============================================================
+        // LÓGICA DE NOTIFICAÇÃO
+
+        const newDateString = dataExibicao ? dataExibicao.toDateString() : null;
+        const mudancas = [];
+
+        // Verifica Status
+        if (oldStatus !== status) {
+          mudancas.push({ campo: "Status", de: oldStatus, para: status });
+        }
+
+        // Verifica Data e formata
+        if (oldDateString !== newDateString) {
+          const oldDateFormatted = oldDateString
+            ? format(new Date(oldDateString), "dd/MM")
+            : "Sem data";
+          const newDateFormatted = newDateString
+            ? format(new Date(newDateString), "dd/MM")
+            : "Sem data";
+
+          mudancas.push({
+            campo: "Data",
+            de: oldDateFormatted,
+            para: newDateFormatted,
+          });
+        }
+
+        // Se houve mudanças importantes, busca usuários e notifica
+        if (mudancas.length > 0) {
+          getUsers().then((todosUsuarios) => {
+            // Filtra para não notificar a si mesmo
+            const idsParaNotificar = todosUsuarios
+              .map((u) => u.uid)
+              .filter((uid) => uid !== user.uid);
+
+            if (idsParaNotificar.length > 0) {
+              notificarEdicaoPrograma(
+                { ...programa, ...programaData }, // Dados novos combinados
+                idsParaNotificar,
+                user.display_name, // Quem editou
+                mudancas
+              );
+            }
+          });
+        }
+        // ==============================================================
+
         onProgramaUpdated({ ...programa, ...programaData });
         onClose();
       } else {
@@ -118,6 +184,26 @@ export function EditarProgramaModal({
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (e.defaultPrevented) return;
+      if (e.target.type === "button") return;
+
+      const form = e.currentTarget;
+
+      // Verifica se o formulário é válido (respeita os 'required')
+      // O reportValidity() retorna true se ok, ou false se inválido (e mostra o balão de erro)
+      if (!form.reportValidity()) {
+        e.preventDefault(); // Impede qualquer outra ação
+        return; // Não envia
+      }
+
+      // Se estiver válido, força o envio
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -126,7 +212,7 @@ export function EditarProgramaModal({
       contentLabel="Editar Programa"
       ariaHideApp={false}
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
         <div className="flex flex-col">
           {/* Cabeçalho */}
           <div className="flex justify-between items-center p-4 border-b border-slate-200">

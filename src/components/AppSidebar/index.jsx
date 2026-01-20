@@ -1,7 +1,5 @@
 // /src/components/AppSidebar.js
 
-import React from "react";
-
 import {
   ChevronLeft,
   Home as HomeIcon,
@@ -16,7 +14,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
@@ -31,9 +28,10 @@ import UserContext from "../../context/UserContext";
 import Modal from "react-modal";
 import { Logout } from "../../components/Logout";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { auth } from "../../../firebase";
+import { auth } from "../../../firebaseClient";
 import { signOut } from "firebase/auth";
 import { customStylesModal } from "@/lib/utils";
+import { NotificationCenter } from "../NotificationsCenter/NotificationCenter";
 
 const firebaseLogout = async () => {
   await signOut(auth);
@@ -75,7 +73,6 @@ const SidebarContents = () => {
   }
 
   const mainMenuItems = [
-    // { title: "Dashboard", icon: HomeIcon, id: "dashboard" },
     { title: "Programas", icon: HomeIcon, id: "programas" },
     {
       title: "Pautas",
@@ -116,6 +113,12 @@ const SidebarContents = () => {
             Produção Audiovisual
           </p>
         </div>
+
+        {!isCollapsed && (
+          <div className="flex-shrink-0">
+            <NotificationCenter />
+          </div>
+        )}
       </SidebarHeader>
       {/* Sidebar content*/}
       <SidebarContent className="px-2 py-4">
@@ -187,11 +190,13 @@ const SidebarContents = () => {
       {/* Sidebar Footer*/}
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent">
-          <img
-            src={user.photoURL}
-            alt="Foto de perfil"
-            className="w-8 h-8 rounded-full flex-shrink-0"
-          />
+          {user.photoURL && (
+            <img
+              src={user.photoURL}
+              alt="Foto de perfil"
+              className="w-8 h-8 rounded-full flex-shrink-0"
+            />
+          )}
           <div
             className={`flex-1 min-w-0 overflow-hidden transition-opacity duration-700 ${
               isCollapsed ? "opacity-0" : "opacity-100"

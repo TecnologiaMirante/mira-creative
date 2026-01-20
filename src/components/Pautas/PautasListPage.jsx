@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { deletePauta, listenToPautas } from "../../../firebase";
+import { deletePauta, getPautas } from "@infra/firebase";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { Card } from "@/components/ui/card";
 import { FileText, Plus } from "lucide-react";
@@ -66,7 +66,7 @@ export function PautasListPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribe = listenToPautas((novasPautas) => {
+    const unsubscribe = getPautas((novasPautas) => {
       setAllPautas(novasPautas);
       setIsLoading(false);
     });

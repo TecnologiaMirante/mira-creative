@@ -1,4 +1,4 @@
-import { db } from "../../../firebase";
+import { db } from "../../../firebaseClient";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Search, Users } from "lucide-react";
 import { useEffect, useState } from "react";

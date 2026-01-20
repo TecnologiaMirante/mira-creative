@@ -49,7 +49,7 @@ import {
 import { useUserCache } from "@/context/UserCacheContext";
 import { useContext, useEffect, useState } from "react";
 import UserContext from "@/context/UserContext";
-import { getPrograma } from "../../../firebase";
+import { getPrograma } from "@infra/firebase";
 
 // --- Componentes Internos (Helpers) ---
 

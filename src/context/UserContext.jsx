@@ -3,8 +3,8 @@
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { getDoc, doc } from "firebase/firestore";
-import { auth, db } from "../../firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "@infra/firebase";
 
 const UserContext = createContext();
 

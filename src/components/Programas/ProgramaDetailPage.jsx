@@ -11,7 +11,7 @@ import {
   addPautaToEspelho,
   updateProgramaDuracao,
   createEspelho,
-} from "../../../firebase";
+} from "../../../firebaseClient";
 import { LoadingOverlay } from "../LoadingOverlay";
 import {
   FileText,
