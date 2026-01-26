@@ -4,7 +4,7 @@ export const emailCriacaoPauta = async (
   destinatarioEmail,
   tituloPauta,
   pautaId,
-  papel
+  papel,
 ) => {
   try {
     const WEBHOOK_URL = "https://eohs4z2pchccj0t.m.pipedream.net";
@@ -12,7 +12,7 @@ export const emailCriacaoPauta = async (
       auth.currentUser?.displayName || "Sistema Mira Creative";
 
     const baseUrl =
-      import.meta.env.VITE_PUBLIC_APP_URL || "http://192.168.7.40:5173";
+      import.meta.env.VITE_PUBLIC_APP_URL || "miracreative.vercel.app";
 
     const linkDaPauta = `${baseUrl}/home/pautas/${pautaId}`;
 
@@ -61,7 +61,7 @@ export const emailCriacaoPauta = async (
                 gap: 10px;
               ">
                 <span style="font-size: 10px; color: #2563eb;">●</span>
-                Você foi vinculado como <strong style="color: #2563eb;"> ${papel}</strong>.
+                Você foi vinculado como&nbsp;<strong style="color: #2563eb;">${papel}</strong>.
               </li>
             </ul>
           </div>
@@ -110,12 +110,12 @@ export const emailEdicaoPauta = async (
   destinatarios,
   tituloPauta,
   pautaId,
-  mudancas
+  mudancas,
 ) => {
   try {
     // Filtra emails vazios ou inválidos
     const emailsValidos = destinatarios.filter(
-      (email) => email && email.includes("@")
+      (email) => email && email.includes("@"),
     );
     if (emailsValidos.length === 0) return;
 
@@ -241,7 +241,7 @@ export const emailEdicaoPauta = async (
                   </div>
 
                 </div>
-              `
+              `,
               )
               .join("")}
           </div>
@@ -292,8 +292,8 @@ export const emailEdicaoPauta = async (
             subject: `✏️ Pauta Atualizada: ${tituloPauta}`,
             body: emailHtml,
           }),
-        })
-      )
+        }),
+      ),
     );
   } catch (error) {
     console.error("Erro ao enviar notificação de edição:", error);
