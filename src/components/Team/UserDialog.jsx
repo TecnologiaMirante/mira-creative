@@ -80,6 +80,9 @@ export function Userdialog({ user, onSave }) {
                 <SelectValue placeholder="Selecione um tipo" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="Apresentador">Apresentador</SelectItem>
+                <SelectItem value="Editor">Editor</SelectItem>
+                <SelectItem value="Produtor">Produtor</SelectItem>
                 <SelectItem value="Administrador">Administrador</SelectItem>
                 <SelectItem value="Visualizador">Visualizador</SelectItem>
               </SelectContent>

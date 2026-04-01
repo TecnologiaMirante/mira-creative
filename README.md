@@ -47,6 +47,7 @@ Módulo de inteligência de dados com `Recharts` para visão estratégica em tem
 - **RBAC (Role-Based Access Control):** Permissões por perfil de usuário. Os principais tipos são:
   - **Administrador:** Acesso total ao sistema, incluindo criação, edição e exclusão de todos os dados e gerenciamento de usuários.
   - **Visualizador:** Acesso somente leitura, ideal para consulta de informações sem risco de alterações.
+  - **Apresentador, Produtor e Editor:** Criação, edição, leitura e exclusão.
 
 ---
 
