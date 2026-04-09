@@ -55,7 +55,9 @@ const StatusBadge = ({ status }) => {
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1">
       <Circle className={`h-2 w-2 ${style}`} />
-      <p className={`text-[11px] font-semibold ${style}`}>{status || "Status N/D"}</p>
+      <p className={`text-[11px] font-semibold ${style}`}>
+        {status || "Status N/D"}
+      </p>
     </div>
   );
 };
@@ -80,7 +82,10 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500" />
 
       <div className="grid h-full grid-rows-[auto_1fr_auto]">
-        <Link to={`/home/programas/${programa.id}`} className="min-h-0">
+        <Link
+          to={`/home/programas/${programa.id}`}
+          className="min-h-0 flex flex-col h-full"
+        >
           <CardHeader className="pb-2">
             <CardTitle
               className={`line-clamp-2 min-h-[2.9rem] text-[18px] font-bold leading-snug tracking-tight ${programStyle.text}`}
@@ -89,7 +94,7 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="grid gap-2 border-b border-slate-100 pb-3">
+          <CardContent className="grid gap-2 border-b border-slate-100 pb-3 flex-1">
             <InfoRow
               icon={CalendarDays}
               label="Exibição"
@@ -113,7 +118,8 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
           </CardContent>
         </Link>
 
-        <CardFooter className="flex flex-col gap-2.5 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* O Erro de tag desbalanceada estava a partir daqui */}
+        <CardFooter className="flex flex-col gap-2.5 px-6 py-3 sm:flex-row sm:items-center sm:justify-between bg-white relative z-10">
           <StatusBadge status={programa.status} />
 
           <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto">
@@ -123,7 +129,10 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-slate-500 hover:text-indigo-600"
-                  onClick={() => onEdit(programa)}
+                  onClick={(e) => {
+                    e.preventDefault(); // Impede o clique de ativar o Link principal
+                    onEdit(programa);
+                  }}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -134,37 +143,7 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir este programa?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. O programa será movido para a lixeira.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDelete(programa.id)}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Sim, Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
-            )}
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                      onClick={(e) => e.preventDefault()} // Impede o clique de ativar o Link principal
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -192,6 +171,7 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
                 </AlertDialog>
               </>
             )}
+
             <Link
               to={`/home/programas/${programa.id}`}
               className="flex items-center rounded-full bg-indigo-50 px-2.5 py-1.5 text-[12px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
