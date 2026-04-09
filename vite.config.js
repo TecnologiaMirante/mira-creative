@@ -9,7 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@infra/firebase": path.resolve(__dirname, "./firebaseClient"),
     },
   },
-  server: { host: "192.168.7.40" },
 });
