@@ -1,5 +1,3 @@
-// /src/components/programas/ProgramaCard.jsx
-
 import {
   Card,
   CardContent,
@@ -31,7 +29,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  calcularDuracaoTotal,
   convertTimestamp,
   getProgramStyle,
   getStatusStyle,
@@ -41,109 +38,126 @@ import { useUserCache } from "@/context/UserCacheContext";
 import { useContext } from "react";
 import UserContext from "@/context/UserContext";
 
-const InfoItem = ({ icon: Icon, children }) => (
-  <div className="flex items-center gap-2 text-sm text-slate-500">
-    <Icon className="h-4 w-4 flex-shrink-0" />
-    <div className="truncate">{children || <p>Não informado</p>}</div>
+const InfoRow = ({ icon: Icon, label, value }) => (
+  <div className="flex min-w-0 items-center gap-2 text-[13px] text-slate-500">
+    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
+      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+    </div>
+    <div className="min-w-0 truncate">
+      <span className="font-semibold text-slate-700">{label}: </span>
+      <span>{value || "N/D"}</span>
+    </div>
   </div>
 );
 
 const StatusBadge = ({ status }) => {
   const style = getStatusStyle(status);
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1">
       <Circle className={`h-2 w-2 ${style}`} />
-      <p className={`text-sm font-semibold ${style}`}>
-        {status || "Status N/D"}
-      </p>
+      <p className={`text-[11px] font-semibold ${style}`}>{status || "Status N/D"}</p>
     </div>
   );
 };
 
-// --- Card Principal ---
 export function ProgramaCard({ programa, onDelete, onEdit }) {
   const { user } = useContext(UserContext);
-
   const programStyle = getProgramStyle(programa.nome);
   const { getUserById, isLoadingCache } = useUserCache();
 
   let editorName = programa.lastEditedByName;
   if (!editorName && programa.editedBy) {
     const editor = getUserById(programa.editedBy);
-    editorName = editor.display_name;
+    editorName = editor?.display_name;
   }
 
-  if (!editorName) {
-    editorName = "N/D";
-  }
+  if (!editorName) editorName = "N/D";
 
   return (
-    // Borda superior colorida e sombra mais sutil no card
     <Card
-      className={`flex flex-col h-full rounded-lg border bg-white shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg relative group border-t-4 ${programStyle}`}
+      className={`group relative flex h-full min-h-[258px] flex-col overflow-hidden border-0 bg-white/90 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_28px_-24px_rgba(15,23,42,0.3)] ${programStyle}`}
     >
-      <div className="flex flex-col">
-        <Link to={`/home/programas/${programa.id}`} className="space-y-4 mb-4">
-          <CardHeader className="cursor-pointer">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500" />
+
+      <div className="grid h-full grid-rows-[auto_1fr_auto]">
+        <Link to={`/home/programas/${programa.id}`} className="min-h-0">
+          <CardHeader className="pb-2">
             <CardTitle
-              className={`text-2xl font-extrabold line-clamp-2 leading-snug ${programStyle.text}`}
+              className={`line-clamp-2 min-h-[2.9rem] text-[18px] font-bold leading-snug tracking-tight ${programStyle.text}`}
             >
               {programa.nome}
             </CardTitle>
           </CardHeader>
 
-          {/* Conteúdo: Informações principais */}
-          <CardContent className="pb-4 space-y-3 flex-grow border-b border-slate-100">
-            {/* EXIBIÇÃO */}
-            <InfoItem icon={CalendarDays}>
-              <p>
-                <span className="font-semibold text-slate-700">Exibição: </span>
-                {convertTimestamp(programa.dataExibicao)}
-              </p>
-            </InfoItem>
-
-            {/* PAUTAS */}
-            <InfoItem icon={FileText}>
-              <p>
-                <span className="font-semibold text-slate-700">Pautas: </span>
-                {programa.pautaCount ?? 0} no espelho
-              </p>
-            </InfoItem>
-            {/* DURAÇÃO */}
-            <InfoItem icon={Clock}>
-              <p>
-                <span className="font-semibold text-slate-700">Duração: </span>
-                {formatSegundos(programa.duracaoTotalSegundos)}
-              </p>
-            </InfoItem>
-
-            {/* EDIÇÃO */}
-            <InfoItem icon={User}>
-              <p>
-                <span className="font-semibold text-slate-700">
-                  Última Edição:{" "}
-                </span>
-                {isLoadingCache ? "..." : editorName}
-              </p>
-            </InfoItem>
+          <CardContent className="grid gap-2 border-b border-slate-100 pb-3">
+            <InfoRow
+              icon={CalendarDays}
+              label="Exibição"
+              value={convertTimestamp(programa.dataExibicao)}
+            />
+            <InfoRow
+              icon={FileText}
+              label="Pautas"
+              value={`${programa.pautaCount ?? 0} no espelho`}
+            />
+            <InfoRow
+              icon={Clock}
+              label="Duração"
+              value={formatSegundos(programa.duracaoTotalSegundos)}
+            />
+            <InfoRow
+              icon={User}
+              label="Última edição"
+              value={isLoadingCache ? "..." : editorName}
+            />
           </CardContent>
         </Link>
 
-        {/* Rodapé: Status e Ação */}
-        <CardFooter className="px-6 flex justify-between items-center">
+        <CardFooter className="flex flex-col gap-2.5 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
           <StatusBadge status={programa.status} />
 
-          <div className="flex items-center gap-1 ">
+          <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto">
             {user?.typeUser !== "Visualizador" && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                  className="h-7 w-7 text-slate-500 hover:text-indigo-600"
                   onClick={() => onEdit(programa)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir este programa?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. O programa será movido para a lixeira.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(programa.id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Sim, Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -180,10 +194,10 @@ export function ProgramaCard({ programa, onDelete, onEdit }) {
             )}
             <Link
               to={`/home/programas/${programa.id}`}
-              className="flex items-center text-sm font-medium text-indigo-600 p-2 rounded-md hover:bg-indigo-50"
+              className="flex items-center rounded-full bg-indigo-50 px-2.5 py-1.5 text-[12px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
             >
               Ver Espelho
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
         </CardFooter>

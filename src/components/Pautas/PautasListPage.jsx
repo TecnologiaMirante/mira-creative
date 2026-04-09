@@ -1,18 +1,27 @@
-// /src/components/pautas/PautasListPage.jsx
-
 import { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { deletePauta, getPautas } from "@infra/firebase";
+import { deletePauta, getPautas } from "../../../firebaseClient";
+import { getProgramas } from "../../../firebaseClient";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { Card } from "@/components/ui/card";
-import { FileText, Plus } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  Search,
+  ListFilter,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PautaCardGrid } from "./PautaCardGrid";
 import { useUserCache } from "@/context/UserCacheContext";
 import { Label } from "@/components/ui/label";
 import Select from "react-select";
 import UserContext from "@/context/UserContext";
+import { selectPortalTarget, selectStyles } from "@/lib/selectStyles";
+import { normalizeText } from "@/lib/utils";
 
 const statusOptions = [
   { value: "all", label: "Todos os Status" },
@@ -29,10 +38,35 @@ const programsOptions = [
   { value: "Especial", label: "Especial" },
 ];
 
+const sortOptions = [
+  { value: "recent", label: "Mais recentes" },
+  { value: "title-asc", label: "Título A-Z" },
+  { value: "title-desc", label: "Título Z-A" },
+  { value: "status", label: "Por status" },
+  { value: "city", label: "Por cidade" },
+];
+
+const SummaryCard = ({ label, value, hint, accentClasses }) => (
+  <Card className="rounded-[22px] border-white/70 bg-white/82 p-5">
+    <div className="space-y-1">
+      <p
+        className={`text-xs font-semibold uppercase tracking-[0.22em] ${accentClasses}`}
+      >
+        {label}
+      </p>
+      <p className="text-3xl font-bold tracking-tight text-slate-900">
+        {value}
+      </p>
+      <p className="text-sm text-slate-500">{hint}</p>
+    </div>
+  </Card>
+);
+
 export function PautasListPage() {
   const { user } = useContext(UserContext);
 
   const [allPautas, setAllPautas] = useState([]);
+  const [programasMap, setProgramasMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { userCache, isLoadingCache } = useUserCache();
@@ -44,25 +78,29 @@ export function PautasListPage() {
     roteiristaId: "all",
     program: "all",
     cidade: "all",
+    query: "",
+    sortBy: "recent",
   });
 
   const userOptions = useMemo(() => {
     if (isLoadingCache || !userCache) return [];
-    const options = [...userCache.values()].map((user) => ({
-      value: user.uid,
-      label: user.display_name,
-    }));
-    return options;
+    return [...userCache.values()]
+      .map((cachedUser) => ({
+        value: cachedUser.uid,
+        label: cachedUser.display_name,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
   }, [userCache, isLoadingCache]);
 
   const cidadeOptions = useMemo(() => {
-    // Cria opções a partir das pautas carregadas
     const cidadesUnicas = [
       ...new Set(allPautas.map((p) => p.cidade).filter(Boolean)),
     ];
-    const options = cidadesUnicas.map((c) => ({ value: c, label: c }));
+    const options = cidadesUnicas
+      .map((cidade) => ({ value: cidade, label: cidade }))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
     return [{ value: "all", label: "Todas as Cidades" }, ...options];
-  }, [allPautas]); // Recalcula se as pautas mudarem
+  }, [allPautas]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -71,34 +109,130 @@ export function PautasListPage() {
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, []); // Recarrega se os filtros mudarem
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = getProgramas((novosProgramas) => {
+      const map = {};
+      novosProgramas.forEach((programa) => {
+        map[programa.id] = programa.nome;
+      });
+      setProgramasMap(map);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const filteredPautas = useMemo(() => {
-    return allPautas.filter((pauta) => {
-      if (filters.status !== "all" && pauta.status !== filters.status)
+    const filtered = allPautas.filter((pauta) => {
+      if (
+        filters.status !== "all" &&
+        normalizeText(pauta.status) !== normalizeText(filters.status)
+      ) {
         return false;
+      }
       if (
         filters.produtorId !== "all" &&
         pauta.produtorId !== filters.produtorId
-      )
+      ) {
         return false;
+      }
       if (
         filters.apresentadorId !== "all" &&
         pauta.apresentadorId !== filters.apresentadorId
-      )
+      ) {
         return false;
+      }
       if (
         filters.roteiristaId !== "all" &&
         pauta.roteiristaId !== filters.roteiristaId
-      )
+      ) {
         return false;
-      if (filters.program !== "all" && pauta.program !== filters.program)
+      }
+      if (filters.program !== "all") {
+        const programaNome = programasMap[pauta.programaId] || "";
+        if (
+          !normalizeText(programaNome).includes(normalizeText(filters.program))
+        ) {
+          return false;
+        }
+      }
+      if (
+        filters.cidade !== "all" &&
+        normalizeText(pauta.cidade) !== normalizeText(filters.cidade)
+      ) {
         return false;
-      if (filters.cidade !== "all" && pauta.cidade !== filters.cidade)
-        return false;
-      return true; // Se passou por todos os filtros, inclua
+      }
+
+      if (filters.query.trim()) {
+        const haystack = [
+          pauta.titulo,
+          pauta.cidade,
+          pauta.bairro,
+          pauta.status,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!normalizeText(haystack).includes(normalizeText(filters.query))) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [allPautas, filters]); // Recalcula SÓ se a lista inteira ou os filtros mudarem
+
+    const sorted = [...filtered];
+    switch (filters.sortBy) {
+      case "title-asc":
+        sorted.sort((a, b) => (a.titulo || "").localeCompare(b.titulo || ""));
+        break;
+      case "title-desc":
+        sorted.sort((a, b) => (b.titulo || "").localeCompare(a.titulo || ""));
+        break;
+      case "status":
+        sorted.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
+        break;
+      case "city":
+        sorted.sort((a, b) => (a.cidade || "").localeCompare(b.cidade || ""));
+        break;
+      default:
+        sorted.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+    }
+
+    return sorted;
+  }, [allPautas, filters]);
+
+  const summary = useMemo(() => {
+    const total = allPautas.length;
+    const comRoteiro = allPautas.filter((item) => item.roteiroId).length;
+    const emProducao = allPautas.filter(
+      (item) => item.status === "Em Produção",
+    ).length;
+    const cidades = new Set(
+      allPautas.map((item) => item.cidade).filter(Boolean),
+    ).size;
+
+    return { total, comRoteiro, emProducao, cidades };
+  }, [allPautas]);
+
+  const activeFiltersCount = useMemo(
+    () =>
+      [
+        filters.status,
+        filters.produtorId,
+        filters.apresentadorId,
+        filters.roteiristaId,
+        filters.program,
+        filters.cidade,
+        filters.query.trim(),
+      ].filter((value) => value && value !== "all").length,
+    [filters],
+  );
 
   const handleDeletePauta = async (pautaId) => {
     toast.promise(deletePauta(pautaId), {
@@ -113,6 +247,19 @@ export function PautasListPage() {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
+  const clearFilters = () => {
+    setFilters({
+      status: "all",
+      produtorId: "all",
+      apresentadorId: "all",
+      roteiristaId: "all",
+      program: "all",
+      cidade: "all",
+      query: "",
+      sortBy: "recent",
+    });
+  };
+
   if (isLoading) {
     return (
       <LoadingOverlay
@@ -123,60 +270,165 @@ export function PautasListPage() {
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col justify-center items-start space-y-2">
-          <div className="flex items-center gap-2">
-            <FileText className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold">Pautas</h1>
+    <div className="page-shell space-y-6 md:space-y-8">
+      <div className="page-hero flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col items-start justify-center space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 shadow-sm">
+            Operação de pauta
           </div>
-          <p className="text-lg text-muted-foreground">
-            Todas as pautas cadastradas no sistema
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-white shadow-[0_18px_34px_-18px_rgba(79,70,229,0.9)]">
+              <FileText className="h-5 w-5" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+              Pautas
+            </h1>
+          </div>
+          <p className="max-w-2xl text-base text-slate-600 md:text-lg">
+            Todas as pautas cadastradas no sistema, com leitura mais rápida da
+            operação.
           </p>
         </div>
-        {user?.typeUser !== "Visualizador" && (
-          <Button
-            className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
-            onClick={() => navigate("/home/pautas/create")}
-          >
-            <Plus className="h-4 w-4" /> Cadastrar Pauta
-          </Button>
-        )}
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <div className="rounded-2xl border border-white/70 bg-white/75 px-4 py-3 text-sm text-slate-600 shadow-sm backdrop-blur">
+            <span className="font-semibold text-slate-900">
+              {filteredPautas.length}
+            </span>{" "}
+            resultados visíveis
+          </div>
+          {user?.typeUser !== "Visualizador" && (
+            <Button
+              className="gap-2 px-4 text-base"
+              onClick={() => navigate("/home/pautas/create")}
+            >
+              <Plus className="h-4 w-4" /> Cadastrar Pauta
+            </Button>
+          )}
+        </div>
       </div>
-      {/* FILTROS */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Filtro por Programa */}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard
+          label="No sistema"
+          value={summary.total}
+          hint="Pautas ativas cadastradas"
+          accentClasses="text-cyan-600"
+        />
+        <SummaryCard
+          label="Com roteiro"
+          value={summary.comRoteiro}
+          hint="Itens com desenvolvimento iniciado"
+          accentClasses="text-indigo-600"
+        />
+        <SummaryCard
+          label="Em produção"
+          value={summary.emProducao}
+          hint="Pautas em andamento agora"
+          accentClasses="text-amber-600"
+        />
+        <SummaryCard
+          label="Cobertura"
+          value={summary.cidades}
+          hint="Cidades mapeadas nas pautas"
+          accentClasses="text-fuchsia-600"
+        />
+      </div>
+
+      <Card className="filter-panel relative z-20 p-4 md:p-5">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <ListFilter className="h-4 w-4 text-cyan-500" />
+            Filtros inteligentes
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium">
+              {activeFiltersCount} filtros ativos
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium">
+              Ordenação:{" "}
+              {sortOptions.find((item) => item.value === filters.sortBy)?.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="space-y-2 md:col-span-2 xl:col-span-2">
+            <Label>Busca rápida</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={filters.query}
+                onChange={(event) =>
+                  handleFilterChange("query", event.target.value)
+                }
+                placeholder="Busque por título, cidade, bairro ou status"
+                className="h-11 rounded-2xl border-white/70 bg-white/85 pl-10 shadow-[0_14px_26px_-24px_rgba(15,23,42,0.45)]"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Programa</Label>
             <Select
               options={programsOptions}
-              defaultValue={programsOptions[0]}
-              onChange={(opt) => handleFilterChange("program", opt.value)}
+              value={programsOptions.find(
+                (item) => item.value === filters.program,
+              )}
+              onChange={(opt) =>
+                handleFilterChange("program", opt?.value || "all")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
 
-          {/* Filtro por Status */}
+          <div className="space-y-2">
+            <Label>Ordenar por</Label>
+            <Select
+              options={sortOptions}
+              value={sortOptions.find((item) => item.value === filters.sortBy)}
+              onChange={(opt) =>
+                handleFilterChange("sortBy", opt?.value || "recent")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label>Status</Label>
             <Select
               options={statusOptions}
-              defaultValue={statusOptions[0]}
-              onChange={(opt) => handleFilterChange("status", opt.value)}
+              value={statusOptions.find(
+                (item) => item.value === filters.status,
+              )}
+              onChange={(opt) =>
+                handleFilterChange("status", opt?.value || "all")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
 
-          {/* Filtro por Cidade */}
           <div className="space-y-2">
             <Label>Cidade</Label>
             <Select
               options={cidadeOptions}
-              defaultValue={cidadeOptions[0]}
-              onChange={(opt) => handleFilterChange("cidade", opt.value)}
+              value={cidadeOptions.find(
+                (item) => item.value === filters.cidade,
+              )}
+              onChange={(opt) =>
+                handleFilterChange("cidade", opt?.value || "all")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
 
-          {/* Filtro por Produtor */}
           <div className="space-y-2">
             <Label>Produtor</Label>
             <Select
@@ -184,13 +436,25 @@ export function PautasListPage() {
                 { value: "all", label: "Todos os Produtores" },
                 ...userOptions,
               ]}
-              defaultValue={{ value: "all", label: "Todos os Produtores" }}
+              value={
+                [
+                  { value: "all", label: "Todos os Produtores" },
+                  ...userOptions,
+                ].find((item) => item.value === filters.produtorId) || {
+                  value: "all",
+                  label: "Todos os Produtores",
+                }
+              }
               isLoading={isLoadingCache}
-              onChange={(opt) => handleFilterChange("produtorId", opt.value)}
+              onChange={(opt) =>
+                handleFilterChange("produtorId", opt?.value || "all")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
 
-          {/* Filtro por Apresentador */}
           <div className="space-y-2">
             <Label>Apresentador</Label>
             <Select
@@ -198,15 +462,25 @@ export function PautasListPage() {
                 { value: "all", label: "Todos os Apresentadores" },
                 ...userOptions,
               ]}
-              defaultValue={{ value: "all", label: "Todos os Apresentadores" }}
+              value={
+                [
+                  { value: "all", label: "Todos os Apresentadores" },
+                  ...userOptions,
+                ].find((item) => item.value === filters.apresentadorId) || {
+                  value: "all",
+                  label: "Todos os Apresentadores",
+                }
+              }
               isLoading={isLoadingCache}
               onChange={(opt) =>
-                handleFilterChange("apresentadorId", opt.value)
+                handleFilterChange("apresentadorId", opt?.value || "all")
               }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
 
-          {/* Filtro por Roteirista */}
           <div className="space-y-2">
             <Label>Roteirista</Label>
             <Select
@@ -214,32 +488,61 @@ export function PautasListPage() {
                 { value: "all", label: "Todos os Roteiristas" },
                 ...userOptions,
               ]}
-              defaultValue={{ value: "all", label: "Todos os Roteiristas" }}
+              value={
+                [
+                  { value: "all", label: "Todos os Roteiristas" },
+                  ...userOptions,
+                ].find((item) => item.value === filters.roteiristaId) || {
+                  value: "all",
+                  label: "Todos os Roteiristas",
+                }
+              }
               isLoading={isLoadingCache}
-              onChange={(opt) => handleFilterChange("roteiristaId", opt.value)}
+              onChange={(opt) =>
+                handleFilterChange("roteiristaId", opt?.value || "all")
+              }
+              styles={selectStyles}
+              menuPortalTarget={selectPortalTarget}
+              menuPosition="fixed"
             />
           </div>
         </div>
+
+        <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-2 text-sm text-slate-500">
+            <Sparkles className="h-4 w-4 text-cyan-500" />
+            Nova rodada de filtros: você pode cruzar equipe, local e ordenação
+            sem perder a leitura da grade.
+          </p>
+          <Button
+            variant="outline"
+            className="gap-2 sm:w-auto"
+            onClick={clearFilters}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Limpar filtros
+          </Button>
+        </div>
       </Card>
+
       {filteredPautas.length === 0 ? (
         <Card className="p-12">
           <div className="text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {/* Mensagem dinâmica se houver filtro */}
-              {filters.status !== "all" || filters.produtorId !== "all"
+            <FileText className="mx-auto mb-4 h-12 w-12 text-cyan-300" />
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
+              {activeFiltersCount > 0
                 ? "Nenhuma pauta encontrada"
                 : "Nenhuma pauta cadastrada"}
             </h3>
             <p className="text-muted-foreground">
-              {filters.status !== "all" || filters.produtorId !== "all"
-                ? "Tente ajustar os filtros ou crie uma nova pauta."
+              {activeFiltersCount > 0
+                ? "Tente ajustar os filtros ou limpar a busca."
                 : "Comece criando sua primeira pauta."}
             </p>
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filteredPautas.map((pauta) => (
             <PautaCardGrid
               key={pauta.id}

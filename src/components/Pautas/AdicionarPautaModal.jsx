@@ -1,35 +1,46 @@
-// /src/components/pautas/AdicionarPautaModal.jsx
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
-import { getPautas } from "@infra/firebase";
-import { Button } from "@/components/ui/button";
-import { X, Plus } from "lucide-react";
-import { useUserCache } from "@/context/UserCacheContext";
-import { customStylesModal } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { CirclePlus, FileText, Plus, Search, User2, X } from "lucide-react";
 
-// Um item da lista de pautas
+import { getPautas } from "../../../firebaseClient";
+import { useUserCache } from "@/context/UserCacheContext";
+import { Button } from "@/components/ui/button";
+import { customStylesModal } from "@/lib/utils";
+
 function PautaDisponivelItem({ pauta, onAdd, isAdding }) {
   const { getUserById, isLoadingCache } = useUserCache();
   const produtor = getUserById(pauta.produtorId);
 
   return (
-    <div className="flex items-center justify-between p-3 border-b border-slate-100 last:border-b-0">
-      <div>
-        <h4 className="font-semibold text-slate-800">{pauta.titulo}</h4>
-        <p className="text-sm text-slate-500">
-          Produtor: {isLoadingCache ? "..." : produtor.display_name}
-        </p>
+    <div className="group rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-slate-200/70">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-600">
+            <FileText className="h-3.5 w-3.5" />
+            Pauta disponível
+          </div>
+          <h4 className="truncate text-base font-semibold text-slate-900">
+            {pauta.titulo}
+          </h4>
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600">
+            <User2 className="h-3.5 w-3.5 text-slate-400" />
+            <span className="truncate">
+              Produtor: {isLoadingCache ? "..." : produtor.display_name}
+            </span>
+          </div>
+        </div>
+
+        <Button
+          size="sm"
+          className="h-10 rounded-xl px-4"
+          onClick={() => onAdd(pauta.id)}
+          disabled={isAdding}
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Vincular
+        </Button>
       </div>
-      <Button
-        size="sm"
-        className="gap-1.5 bg-blue-600 hover:bg-blue-700 h-8 px-2 text-xs"
-        onClick={() => onAdd(pauta.id)}
-        disabled={isAdding}
-      >
-        <Plus className="h-4 w-4" /> Vincular
-      </Button>
     </div>
   );
 }
@@ -50,7 +61,6 @@ export function AdicionarPautaModal({
 
     setIsLoading(true);
 
-    // Agora 'pautasSoltas' contém TODAS as pautas do banco
     const unsubscribe = getPautas((todasAsPautas) => {
       if (!todasAsPautas) {
         setPautasDisponiveis([]);
@@ -58,16 +68,11 @@ export function AdicionarPautaModal({
         return;
       }
 
-      // Conjunto de IDs que JÁ estão neste espelho específico
       const idsPautasAtuais = new Set(pautasAtuais.map((p) => p.id));
 
       const disponiveis = todasAsPautas.filter((p) => {
-        // 1. Não pode estar na lista atual deste espelho
         const naoEstaNesteEspelho = !idsPautasAtuais.has(p.id);
-
-        // 2. Não pode estar vinculado a NENHUM outro espelho (espelhoId deve ser null ou undefined)
         const naoTemDono = !p.espelhoId;
-
         return naoEstaNesteEspelho && naoTemDono;
       });
 
@@ -76,17 +81,13 @@ export function AdicionarPautaModal({
     });
 
     return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
+      if (typeof unsubscribe === "function") unsubscribe();
     };
   }, [isOpen, pautasAtuais]);
 
   const handleAddPauta = async (pautaId) => {
     setIsAdding(pautaId);
-
     await onPautaAdded(pautaId);
-
     setIsAdding(null);
   };
 
@@ -103,58 +104,95 @@ export function AdicionarPautaModal({
       contentLabel="Vincular Pauta ao Espelho"
       ariaHideApp={false}
     >
-      <div className="flex flex-col">
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-center p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">Vincular Pauta</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+      <div className="flex max-h-[88vh] flex-col">
+        <div className="border-b border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_38%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.96))] px-5 py-5 sm:px-7">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
+                <CirclePlus className="h-3.5 w-3.5" />
+                Espelho
+              </span>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Vincular pauta
+                </h2>
+                <p className="max-w-2xl text-sm text-slate-600">
+                  Escolha uma pauta livre para adicionar ao espelho atual sem
+                  perder a organização da grade.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full border border-slate-200/80 bg-white/80 text-slate-500 shadow-sm hover:bg-white"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                Disponíveis
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">
+                {pautasDisponiveis.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                Critério
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                Sem vínculo com outro espelho
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Corpo com a Lista */}
         <div
-          className="p-4 overflow-y-auto"
-          style={{ maxHeight: "calc(90vh - 140px)" }}
+          className="space-y-3 overflow-y-auto px-5 py-6 sm:px-7"
+          style={{ maxHeight: "calc(88vh - 230px)" }}
         >
           {isLoading ? (
-            <p>Carregando pautas...</p>
-          ) : pautasDisponiveis.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">
-              Nenhuma pauta disponível para vincular.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {pautasDisponiveis.map((pauta) => (
-                <PautaDisponivelItem
-                  key={pauta.id}
-                  pauta={pauta}
-                  onAdd={handleAddPauta}
-                  isAdding={isAdding === pauta.id}
-                />
-              ))}
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-12 text-center">
+              <p className="text-sm text-slate-500">Carregando pautas...</p>
             </div>
+          ) : pautasDisponiveis.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-12 text-center">
+              <Search className="mx-auto mb-3 h-8 w-8 text-slate-300" />
+              <p className="text-base font-medium text-slate-700">
+                Nenhuma pauta disponível para vincular
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Todas as pautas livres já estão sendo usadas ou não existem no
+                momento.
+              </p>
+            </div>
+          ) : (
+            pautasDisponiveis.map((pauta) => (
+              <PautaDisponivelItem
+                key={pauta.id}
+                pauta={pauta}
+                onAdd={handleAddPauta}
+                isAdding={isAdding === pauta.id}
+              />
+            ))
           )}
         </div>
 
-        {/* Rodapé */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
-          {/* Botão de Criar Novo (SECUNDÁRIO) */}
+        <div className="flex flex-col gap-3 border-t border-slate-200/80 bg-slate-50/90 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <Button
             variant="link"
-            className="p-0 h-auto text-sm text-blue-600 hover:text-blue-800"
+            className="h-auto justify-start p-0 text-sm text-indigo-600 hover:text-indigo-700"
             onClick={handleNavigateToCreate}
           >
-            Ou cadastre uma nova pauta
+            Ou cadastrar uma nova pauta
           </Button>
-
-          {/* Botão de Fechar (PRIMÁRIO no rodapé) */}
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="rounded-xl">
             Fechar
           </Button>
         </div>

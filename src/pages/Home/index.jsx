@@ -20,7 +20,7 @@ function MainContent() {
   const navigate = useNavigate();
 
   return (
-    <main className="flex-1 bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out">
+    <main className="flex-1 overflow-y-auto transition-all duration-300 ease-in-out">
       <Routes>
         {/* --- ROTAS PRINCIPAIS --- */}
         <Route path="/" element={<Navigate to="programas" replace />} />
@@ -58,7 +58,7 @@ export function Home() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50">
+      <div className="flex min-h-screen w-full bg-transparent">
         <AppSidebar />
         {user?.typeUser !== "user" ? <MainContent /> : <AccessDenied />}
       </div>

@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  FileText,
   PlayCircle,
   XCircle,
 } from "lucide-react";
@@ -12,6 +13,14 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
+}
+
+export function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 export const getStatusClasses = (status) => {
@@ -139,18 +148,31 @@ export function convertTimestamp(timestamp) {
 }
 
 export const customStylesModal = {
+  overlay: {
+    background:
+      "radial-gradient(circle at top, rgba(99,102,241,0.18), transparent 32%), rgba(15, 23, 42, 0.58)",
+    backdropFilter: "blur(10px)",
+    zIndex: 1200,
+  },
   content: {
     top: "50%",
     left: "50%",
     right: "auto",
     bottom: "auto",
     transform: "translate(-50%, -50%)",
-    width: "90%",
-    maxWidth: "400px",
+    width: "min(92vw, 760px)",
+    maxWidth: "760px",
     height: "auto",
-    maxHeight: "90vh",
-    borderRadius: "0.5rem",
-    padding: "1rem",
+    maxHeight: "88vh",
+    overflow: "hidden",
+    borderRadius: "28px",
+    padding: "0",
+    border: "1px solid rgba(226, 232, 240, 0.85)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)",
+    boxShadow:
+      "0 36px 90px -35px rgba(15, 23, 42, 0.55), 0 12px 30px -20px rgba(99, 102, 241, 0.25)",
+    zIndex: 1201,
   },
 };
 

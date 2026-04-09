@@ -1,5 +1,3 @@
-// /src/components/AppSidebar.js
-
 import {
   ChevronLeft,
   Home as HomeIcon,
@@ -44,7 +42,7 @@ const SidebarToggle = () => {
     <Button
       variant="ghost"
       size="icon"
-      className="absolute -right-4 top-1/2 -translate-y-1/2 bg-background hover:bg-accent border rounded-full h-8 w-8 hidden lg:flex"
+      className="absolute -right-4 top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur lg:flex"
       onClick={toggleSidebar}
     >
       <ChevronLeft
@@ -55,6 +53,15 @@ const SidebarToggle = () => {
     </Button>
   );
 };
+
+const navItemClass = (isCollapsed, isActive) =>
+  `flex items-center w-full gap-3 px-3 py-3 text-left rounded-2xl transition-all duration-300 ${
+    isCollapsed ? "justify-center" : "justify-start"
+  } ${
+    isActive
+      ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-primary-foreground shadow-[0_20px_30px_-20px_rgba(34,211,238,0.9)]"
+      : "text-sidebar-foreground/80 hover:bg-white/10 hover:text-sidebar-accent-foreground"
+  }`;
 
 const SidebarContents = () => {
   const location = useLocation();
@@ -74,17 +81,8 @@ const SidebarContents = () => {
 
   const mainMenuItems = [
     { title: "Programas", icon: HomeIcon, id: "programas" },
-    {
-      title: "Pautas",
-      icon: FileText,
-      id: "pautas",
-    },
-
-    {
-      title: "Pergunte ao Daqui",
-      icon: MessageCircle,
-      id: "ai-chat",
-    },
+    { title: "Pautas", icon: FileText, id: "pautas" },
+    { title: "Pergunte ao Daqui", icon: MessageCircle, id: "ai-chat" },
   ];
 
   const toolsMenuItems = [
@@ -96,20 +94,21 @@ const SidebarContents = () => {
   return (
     <>
       <SidebarToggle />
-      {/* Sidebar Header*/}
-      <SidebarHeader className="p-4 border-b border-sidebar-border flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#2563eb] rounded-lg flex items-center justify-center flex-shrink-0">
+      <SidebarHeader className="relative flex items-center justify-center gap-3 border-b border-sidebar-border/70 py-5">
+        <div className="absolute inset-x-4 bottom-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-fuchsia-500 shadow-[0_16px_30px_-18px_rgba(59,130,246,0.9)]">
           <FileText className="h-6 w-6 text-primary-foreground" />
         </div>
+
         <div
-          className={`overflow-hidden transition-opacity duration-200 ${
-            isCollapsed ? "opacity-0" : "opacity-100"
+          className={`overflow-hidden text-center transition-opacity duration-200 ${
+            isCollapsed ? "opacity-0 w-0" : "opacity-100"
           }`}
         >
-          <h1 className="text-xl font-sans font-bold text-sidebar-foreground whitespace-nowrap">
+          <h1 className="whitespace-nowrap text-xl font-bold tracking-tight text-sidebar-foreground">
             Mira Creative
           </h1>
-          <p className="text-sm text-muted-foreground whitespace-nowrap">
+          <p className="whitespace-nowrap text-xs font-medium uppercase tracking-[0.24em] text-slate-300/85">
             Produção Audiovisual
           </p>
         </div>
@@ -120,11 +119,10 @@ const SidebarContents = () => {
           </div>
         )}
       </SidebarHeader>
-      {/* Sidebar content*/}
+
       <SidebarContent className="px-2 py-4">
-        {/* Sidebar Menu PRINCIPAL*/}
         {!isCollapsed && (
-          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300/70">
             Principal
           </SidebarGroupLabel>
         )}
@@ -133,14 +131,11 @@ const SidebarContents = () => {
             <SidebarMenuItem key={item.id}>
               <Link
                 to={`/home/${item.id}`}
-                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
-                  isCollapsed ? "justify-center" : "justify-start"
-                } ${
+                className={navItemClass(
+                  isCollapsed,
                   location.pathname.startsWith(`/home/${item.id}`) ||
-                  (location.pathname === "/home" && item.id === "programas")
-                    ? "bg-[#2563eb] text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+                    (location.pathname === "/home" && item.id === "programas"),
+                )}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span
@@ -155,9 +150,8 @@ const SidebarContents = () => {
           ))}
         </SidebarMenu>
 
-        {/* Sidebar Menu FERRAMENTAS*/}
         {!isCollapsed && (
-          <SidebarGroupLabel className="text-xs font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+          <SidebarGroupLabel className="mt-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300/70">
             Ferramentas
           </SidebarGroupLabel>
         )}
@@ -166,13 +160,10 @@ const SidebarContents = () => {
             <SidebarMenuItem key={item.id}>
               <Link
                 to={`/home/${item.id}`}
-                className={`flex items-center w-full gap-3 px-2 py-3 text-left rounded-lg transition-all duration-700 ${
-                  isCollapsed ? "justify-center" : "justify-start"
-                } ${
-                  location.pathname.startsWith(`/home/${item.id}`)
-                    ? "bg-[#2563eb] text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+                className={navItemClass(
+                  isCollapsed,
+                  location.pathname.startsWith(`/home/${item.id}`),
+                )}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span
@@ -187,40 +178,49 @@ const SidebarContents = () => {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      {/* Sidebar Footer*/}
-      <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent">
+
+      <SidebarFooter
+        className={`border-t border-sidebar-border/70 transition-all duration-300 ease-in-out ${!isCollapsed && "p-3"}`}
+      >
+        <div
+          className={`flex items-center rounded-[20px] border border-white/10 bg-white/10 backdrop-blur transition-all duration-300 ease-in-out ${!isCollapsed && "p-3 gap-3"}`}
+        >
           {user.photoURL && (
             <img
               src={user.photoURL}
               alt="Foto de perfil"
-              className="w-8 h-8 rounded-full flex-shrink-0"
+              className={`rounded-full ring-2 ring-white/20 flex-shrink-0 transition-all duration-300 ease-in-out ${
+                isCollapsed ? "h-8 w-8" : "h-9 w-9"
+              }`}
             />
           )}
+
           <div
-            className={`flex-1 min-w-0 overflow-hidden transition-opacity duration-700 ${
-              isCollapsed ? "opacity-0" : "opacity-100"
+            className={`flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-in-out ${
+              isCollapsed ? "w-0 opacity-0" : "opacity-100"
             }`}
           >
             <p className="text-sm font-medium text-sidebar-foreground truncate whitespace-nowrap">
               {user.display_name}
             </p>
-            <p className="text-xs text-muted-foreground truncate whitespace-nowrap">
+            <p className="text-xs text-slate-300/70 truncate whitespace-nowrap">
               {user.email}
             </p>
           </div>
+
           <Button
             variant="ghost"
             size="icon"
             onClick={openModal}
-            className={`h-8 w-8 p-0 cursor-pointer flex-shrink-0 ${
-              isCollapsed ? "opacity-0" : "opacity-100"
+            className={`p-0 cursor-pointer flex-shrink-0 text-sidebar-foreground transition-all duration-300 ease-in-out overflow-hidden ${
+              isCollapsed ? "w-0 h-0 opacity-0" : "h-8 w-8 opacity-100"
             }`}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 shrink-0" />
           </Button>
         </div>
       </SidebarFooter>
+
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}

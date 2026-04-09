@@ -12,7 +12,7 @@ import {
   createPauta,
   notificarCriacaoPauta,
   emailCriacaoPauta,
-} from "@infra/firebase";
+} from "../../../firebaseClient";
 
 const initialState = {
   produtorId: "",
@@ -68,7 +68,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
   // useEffect para carregar cidades do IBGE
   useEffect(() => {
     fetch(
-      "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios"
+      "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios",
     )
       .then((res) => res.json())
       .then((data) => {
@@ -88,7 +88,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
     if (dataInicio && formData.dataExibicao) {
       if (formData.dataExibicao < dataInicio) {
         setDateValidationError(
-          "A data de exibição não pode ser anterior à data de gravação."
+          "A data de exibição não pode ser anterior à data de gravação.",
         );
       } else {
         setDateValidationError("");
@@ -146,7 +146,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
       return;
     }
     if (!user) {
-      toast.error("Você não está autenticado."), { duration: 1500 };
+      (toast.error("Você não está autenticado."), { duration: 1500 });
       return;
     }
 
@@ -193,7 +193,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
             produtor.email,
             pautaData.titulo,
             newPautaId,
-            "Produtor"
+            "Produtor",
           );
         }
         // Envia para o Apresentador
@@ -203,7 +203,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
             apresentador.email,
             pautaData.titulo,
             newPautaId,
-            "Apresentador"
+            "Apresentador",
           );
         }
         // Envia para o Roteirista
@@ -213,7 +213,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
             roteirista.email,
             pautaData.titulo,
             newPautaId,
-            "Roteirista"
+            "Roteirista",
           );
         }
       }

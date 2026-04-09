@@ -14,7 +14,7 @@ import {
   markNotificacaoAsRead,
   markAllNotificacoesAsRead,
   deleteNotificacao,
-} from "@infra/firebase";
+} from "../../../firebaseClient";
 import UserContext from "@/context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";

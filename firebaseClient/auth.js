@@ -9,7 +9,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 
-// Função de Login via Google com conta da Mirante
+// Funcao de login via Google com conta da Mirante
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   try {
@@ -17,11 +17,7 @@ export const signInWithGoogle = async () => {
     const user = result.user;
 
     if (!user.email.endsWith("@mirante.com.br")) {
-      alert("Apenas contas @mirante.com.br são permitidas!");
-
-      await deleteUser(user).catch((err) =>
-        console.error("Erro ao excluir usuário:", err)
-      );
+      alert("Apenas contas @mirante.com.br sao permitidas!");
       await signOut(auth);
       return null;
     }
@@ -43,6 +39,7 @@ export const signInWithGoogle = async () => {
         typeUser: "Visualizador",
       });
     }
+
     const userData = await getUserData();
     const token = await user.getIdToken();
 
@@ -53,7 +50,7 @@ export const signInWithGoogle = async () => {
   }
 };
 
-// Função de Logout
+// Funcao de logout
 export const logout = async (navigate) => {
   try {
     await signOut(auth);
@@ -102,7 +99,7 @@ export const getUsers = async () => {
     });
     return users;
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
+    console.error("Erro ao buscar usuarios:", error);
     return [];
   }
 };

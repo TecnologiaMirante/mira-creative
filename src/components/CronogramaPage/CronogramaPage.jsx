@@ -1,23 +1,22 @@
-// /src/components/CronogramaPage/index.jsx
-
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useUserCache } from "@/context/UserCacheContext";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import timeGridPlugin from "@fullcalendar/timegrid";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../../../firebaseClient";
 import {
+  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Tv,
-  Calendar as CalendarIcon,
   Filter,
+  Tv,
 } from "lucide-react";
-import "./CronogramaPage.css";
+
+import { db } from "../../../firebaseClient";
+import { useUserCache } from "@/context/UserCacheContext";
 import { Button } from "@/components/ui/button";
+import { LoadingOverlay } from "../LoadingOverlay";
 import {
   Select,
   SelectContent,
@@ -26,19 +25,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TooltipProvider } from "../ui/tooltip";
-
-import { getProgramConfig, getStatusConfig } from "@/lib/utils";
-import { LoadingOverlay } from "../LoadingOverlay";
 import { EventCard } from "./EventCard";
 import { SafeGetDate } from "./SafeGetDate";
+import { getProgramConfig, getStatusConfig } from "@/lib/utils";
+import "./CronogramaPage.css";
 
 export function CronogramaPage() {
   const [allScripts, setAllScripts] = useState([]);
   const [allPrograms, setAllPrograms] = useState([]);
   const [loadingPautas, setLoadingPautas] = useState(true);
   const [loadingProgramas, setLoadingProgramas] = useState(true);
-
-  // Filtros
   const [viewType, setViewType] = useState("pautas");
   const [dateFilter, setDateFilter] = useState("exibicao");
   const [programFilter, setProgramFilter] = useState("all");
@@ -50,7 +46,6 @@ export function CronogramaPage() {
   const calendarRef = useRef(null);
   const { getUserById } = useUserCache();
 
-  // 1. Busca PAUTAS
   useEffect(() => {
     const q = query(collection(db, "pautas"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -65,11 +60,10 @@ export function CronogramaPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Busca PROGRAMAS
   useEffect(() => {
     const q = query(
       collection(db, "programas"),
-      where("isVisible", "==", true)
+      where("isVisible", "==", true),
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const programsData = snapshot.docs.map((doc) => ({
@@ -83,17 +77,12 @@ export function CronogramaPage() {
     return () => unsubscribe();
   }, []);
 
-  // Lógica de Filtragem e Mapeamento
   const filteredEvents = useMemo(() => {
-    // --- PAUTAS ---
     if (viewType === "pautas") {
       return allScripts
         .filter((script) => {
-          // 1. FILTRO DE PROGRAMA
           if (programFilter !== "all") {
-            // Descobre o nome real do programa usando o ID
             let nomeRealPrograma = "Programa não vinculado";
-
             if (script.programaId) {
               const prog = allPrograms.find((p) => p.id === script.programaId);
               if (prog) nomeRealPrograma = prog.nome;
@@ -101,20 +90,17 @@ export function CronogramaPage() {
               nomeRealPrograma = script.programa;
             }
 
-            // Lógica de Comparação
             if (programFilter === "Especial") {
-              // Se o filtro for "Especial", aceita "Especial - Carnaval", "Especial - Natal", etc.
               if (!nomeRealPrograma.startsWith("Especial")) return false;
-            } else {
-              // Para outros (ex: "Daqui"), comparação exata ou parcial
-              if (nomeRealPrograma !== programFilter) return false;
+            } else if (nomeRealPrograma !== programFilter) {
+              return false;
             }
           }
 
-          // 2. Filtro de Status
           if (statusFilter !== "all" && script.status !== statusFilter) {
             return false;
           }
+
           return true;
         })
         .flatMap((script) => {
@@ -148,64 +134,61 @@ export function CronogramaPage() {
               });
             }
           }
+
           return events;
         });
     }
 
-    // --- PROGRAMAS  ---
-    if (viewType === "programas") {
-      if (dateFilter === "gravacao") return [];
+    if (dateFilter === "gravacao") return [];
 
-      return allPrograms
-        .filter((prog) => {
-          if (programFilter !== "all") {
-            if (programFilter === "Especial") {
-              if (!prog.nome.startsWith("Especial")) return false;
-            } else {
-              if (prog.nome !== programFilter) return false;
-            }
-          }
-          if (statusFilter !== "all" && prog.status !== statusFilter)
+    return allPrograms
+      .filter((prog) => {
+        if (programFilter !== "all") {
+          if (programFilter === "Especial") {
+            if (!prog.nome.startsWith("Especial")) return false;
+          } else if (prog.nome !== programFilter) {
             return false;
-          return true;
-        })
-        .flatMap((prog) => {
-          const dateStr = SafeGetDate(prog.dataExibicao);
-          if (!dateStr) return [];
+          }
+        }
 
-          const styles = getProgramConfig(prog.nome);
+        if (statusFilter !== "all" && prog.status !== statusFilter) {
+          return false;
+        }
 
-          return [
-            {
-              id: prog.id,
-              title: prog.nome,
-              start: `${dateStr}T12:00:00`,
-              extendedProps: { ...prog, eventType: "programa", styles },
-            },
-          ];
-        });
-    }
-    return [];
+        return true;
+      })
+      .flatMap((prog) => {
+        const dateStr = SafeGetDate(prog.dataExibicao);
+        if (!dateStr) return [];
+
+        const styles = getProgramConfig(prog.nome);
+        return [
+          {
+            id: prog.id,
+            title: prog.nome,
+            start: `${dateStr}T12:00:00`,
+            extendedProps: { ...prog, eventType: "programa", styles },
+          },
+        ];
+      });
   }, [
-    allScripts,
     allPrograms,
-    viewType,
+    allScripts,
     dateFilter,
     programFilter,
     statusFilter,
+    viewType,
   ]);
 
   const renderEventContent = useCallback(
-    (eventInfo) => {
-      return (
-        <EventCard
-          eventInfo={eventInfo}
-          allPrograms={allPrograms}
-          getUserById={getUserById}
-        />
-      );
-    },
-    [allPrograms, getUserById]
+    (eventInfo) => (
+      <EventCard
+        eventInfo={eventInfo}
+        allPrograms={allPrograms}
+        getUserById={getUserById}
+      />
+    ),
+    [allPrograms, getUserById],
   );
 
   const goToNext = () => calendarRef.current?.getApi().next();
@@ -218,161 +201,175 @@ export function CronogramaPage() {
 
   const updateTitle = useCallback((args) => {
     const api = args?.view?.calendar || calendarRef.current?.getApi();
+    if (!api) return;
 
-    if (api) {
-      const currentDate = api.getDate();
-
-      const month = currentDate.toLocaleString("pt-BR", { month: "long" });
-      const year = currentDate.getFullYear();
-      const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
-
-      setCalendarTitle(`${monthCapitalized}/${year}`);
-    }
+    const currentDate = api.getDate();
+    const month = currentDate.toLocaleString("pt-BR", { month: "long" });
+    const year = currentDate.getFullYear();
+    const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
+    setCalendarTitle(`${monthCapitalized}/${year}`);
   }, []);
 
   if (isLoading) return <LoadingOverlay message="Carregando cronograma..." />;
 
   return (
     <TooltipProvider>
-      <div className="cronograma-page min-h-screen bg-slate-50/50 p-4 md:p-6 flex flex-col gap-4 md:gap-6">
-        {/* Header */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-4">
-          {/* Controls (Top Row) */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-              <div className="flex items-center bg-slate-100 rounded-lg p-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={goToPrev}
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="h-8 px-3 text-xs font-medium"
-                  onClick={goToToday}
-                >
-                  Hoje
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={goToNext}
-                >
-                  <ChevronRight size={16} />
-                </Button>
+      <div className="cronograma-page flex min-h-screen flex-col gap-5 bg-slate-50/50 p-4 md:gap-6 md:p-6">
+        <div className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(79,70,229,0.14),_transparent_32%),linear-gradient(180deg,_rgba(255,255,255,0.97),_rgba(248,250,252,0.97))] p-5 shadow-[0_30px_80px_-48px_rgba(15,23,42,0.45)] md:p-6">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="space-y-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-indigo-700">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  Planejamento
+                </span>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                    {calendarTitle}
+                  </h1>
+                  <p className="max-w-3xl text-sm text-slate-600 md:text-base">
+                    Acompanhe exibições, gravações e programas em uma visão mais
+                    clara para operação e reuniões editoriais.
+                  </p>
+                </div>
               </div>
-              <h1 className="text-lg md:text-2xl font-bold text-slate-800 capitalize truncate text-right md:text-left">
-                {calendarTitle}
-              </h1>
-            </div>
-            <div className="flex bg-slate-100 p-1 rounded-lg shrink-0 md:ml-auto">
-              <button
-                onClick={() => changeView("timeGridWeek")}
-                className={`cursor-pointer px-3 py-1.5 text-xs font-medium rounded transition-all ${
-                  view === "timeGridWeek"
-                    ? "bg-white shadow-sm text-indigo-600"
-                    : "text-slate-500"
-                }`}
-              >
-                Semana
-              </button>
-              <button
-                onClick={() => changeView("dayGridMonth")}
-                className={`cursor-pointer px-3 py-1.5 text-xs font-medium rounded transition-all ${
-                  view === "dayGridMonth"
-                    ? "bg-white shadow-sm text-purple-600"
-                    : "text-slate-500"
-                }`}
-              >
-                Mês
-              </button>
-            </div>
-          </div>
 
-          <div className="h-px w-full bg-slate-100 md:hidden"></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center rounded-2xl border border-slate-200/80 bg-white/85 p-1 shadow-sm">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-xl"
+                    onClick={goToPrev}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="h-9 rounded-xl px-3 text-sm"
+                    onClick={goToToday}
+                  >
+                    Hoje
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-xl"
+                    onClick={goToNext}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-          {/* Controls (Bottom Row: Filters) */}
-          <div className="flex flex-col lg:flex-row items-center gap-3 w-full">
-            <div className="flex bg-slate-100 p-1 rounded-lg w-full lg:w-auto">
-              <button
-                onClick={() => setViewType("pautas")}
-                className={`cursor-pointer flex-1 lg:flex-none px-4 py-1.5 text-xs md:text-sm font-semibold rounded-md transition-all ${
-                  viewType === "pautas"
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-slate-500"
-                }`}
-              >
-                Pautas
-              </button>
-              <button
-                onClick={() => {
-                  setViewType("programas");
-                  setDateFilter("exibicao");
-                }}
-                className={`cursor-pointer flex-1 lg:flex-none px-4 py-1.5 text-xs md:text-sm font-semibold rounded-md transition-all ${
-                  viewType === "programas"
-                    ? "bg-white text-purple-600 shadow-sm"
-                    : "text-slate-500"
-                }`}
-              >
-                Programas
-              </button>
+                <div className="flex items-center rounded-2xl border border-slate-200/80 bg-white/85 p-1 shadow-sm">
+                  <button
+                    onClick={() => changeView("timeGridWeek")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      view === "timeGridWeek"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    Semana
+                  </button>
+                  <button
+                    onClick={() => changeView("dayGridMonth")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      view === "dayGridMonth"
+                        ? "bg-white text-indigo-600 shadow-sm"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    Mês
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 md:flex gap-2 w-full lg:w-auto lg:ml-auto">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[150px] h-9 text-xs">
-                  <Filter className="w-3 h-3 mr-2 opacity-50" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Status</SelectItem>
-                  <SelectItem value="Aprovado">Aprovado</SelectItem>
-                  <SelectItem value="Em Produção">Em Produção</SelectItem>
-                  <SelectItem value="Em Revisão">Em Revisão</SelectItem>
-                  <SelectItem value="Exibido">Exibido</SelectItem>
-                  <SelectItem value="Cancelado">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={programFilter} onValueChange={setProgramFilter}>
-                <SelectTrigger className="w-full md:w-[180px] h-9 text-xs">
-                  <Tv className="w-3 h-3 mr-2 opacity-50" />
-                  <SelectValue placeholder="Programa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Programas</SelectItem>
-                  <SelectItem value="Daqui">Daqui</SelectItem>
-                  <SelectItem value="Especial">Especial</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="col-span-2 md:col-span-1">
-                <Select
-                  value={dateFilter}
-                  onValueChange={setDateFilter}
-                  disabled={viewType === "programas"}
+            <div className="grid gap-3 xl:grid-cols-[auto,1fr]">
+              <div className="flex w-full rounded-2xl border border-slate-200/80 bg-white/85 p-1 shadow-sm xl:w-fit">
+                <button
+                  onClick={() => setViewType("pautas")}
+                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition xl:flex-none ${
+                    viewType === "pautas"
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-500"
+                  }`}
                 >
-                  <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
-                    <CalendarIcon className="w-3 h-3 mr-2 opacity-50" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="exibicao">Exibição</SelectItem>
-                    <SelectItem value="gravacao">Gravação</SelectItem>
-                  </SelectContent>
-                </Select>
+                  Pautas
+                </button>
+                <button
+                  onClick={() => {
+                    setViewType("programas");
+                    setDateFilter("exibicao");
+                  }}
+                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition xl:flex-none ${
+                    viewType === "programas"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  Programas
+                </button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/85 px-3 shadow-sm">
+                  <Filter className="h-4 w-4 text-slate-400" />
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos Status</SelectItem>
+                      <SelectItem value="Aprovado">Aprovado</SelectItem>
+                      <SelectItem value="Em Produção">Em Produção</SelectItem>
+                      <SelectItem value="Em Revisão">Em Revisão</SelectItem>
+                      <SelectItem value="Exibido">Exibido</SelectItem>
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/85 px-3 shadow-sm">
+                  <Tv className="h-4 w-4 text-slate-400" />
+                  <Select
+                    value={programFilter}
+                    onValueChange={setProgramFilter}
+                  >
+                    <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                      <SelectValue placeholder="Programa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos Programas</SelectItem>
+                      <SelectItem value="Daqui">Daqui</SelectItem>
+                      <SelectItem value="Especial">Especial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/85 px-3 shadow-sm">
+                  <CalendarIcon className="h-4 w-4 text-slate-400" />
+                  <Select
+                    value={dateFilter}
+                    onValueChange={setDateFilter}
+                    disabled={viewType === "programas"}
+                  >
+                    <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="exibicao">Exibição</SelectItem>
+                      <SelectItem value="gravacao">Gravação</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Calendário */}
-        <div className="flex-grow bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-1 min-h-[500px] h-[calc(100vh-280px)]">
+        <div className="min-h-[560px] flex-grow overflow-hidden rounded-[32px] border border-slate-200/80 bg-white p-2 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:h-[calc(100vh-290px)]">
           <FullCalendar
             ref={calendarRef}
             plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
