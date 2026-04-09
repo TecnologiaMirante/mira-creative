@@ -1,11 +1,11 @@
-import { db } from "../../../firebase";
+import { db } from "../../../firebaseClient";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { Loader2, Search, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card } from "../ui/card";
-import { CardUser } from "../Users/CardUser";
 import { Input } from "../ui/input";
 import { LoadingOverlay } from "../LoadingOverlay";
+import { CardUser } from "./CardUser";
 
 export function Team() {
   const [usersTeam, setUsersTeam] = useState([]);

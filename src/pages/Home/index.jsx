@@ -5,9 +5,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AiChat } from "@/components/AiChat";
 import { ScriptForm } from "@/components/Card/ScriptForm";
-import { CronogramaPage } from "@/components/CronogramaPage";
 import { useContext } from "react";
-import { Team } from "@/components/Team";
+import { Team } from "@/components/Team/Team";
 import UserContext from "@/context/UserContext";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ProgramasListPage } from "@/components/Programas/ProgramasListPage";
@@ -15,12 +14,13 @@ import { ProgramaDetailPage } from "@/components/Programas/ProgramaDetailPage";
 import { PautaDetailPage } from "@/components/Pautas/PautaDetailPage";
 import { PautasListPage } from "@/components/Pautas/PautasListPage";
 import { ReportsPage } from "@/components/Reports/ReportsPage";
+import { CronogramaPage } from "@/components/CronogramaPage/CronogramaPage";
 
 function MainContent() {
   const navigate = useNavigate();
 
   return (
-    <main className="flex-1 bg-gray-50 overflow-y-auto transition-all duration-300 ease-in-out">
+    <main className="flex-1 overflow-y-auto transition-all duration-300 ease-in-out">
       <Routes>
         {/* --- ROTAS PRINCIPAIS --- */}
         <Route path="/" element={<Navigate to="programas" replace />} />
@@ -58,7 +58,7 @@ export function Home() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50">
+      <div className="flex min-h-screen w-full bg-transparent">
         <AppSidebar />
         {user?.typeUser !== "user" ? <MainContent /> : <AccessDenied />}
       </div>

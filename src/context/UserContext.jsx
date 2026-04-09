@@ -1,10 +1,8 @@
-// /src/context/UserContext.js
-
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { getDoc, doc } from "firebase/firestore";
-import { auth, db } from "../../firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "../../firebaseClient";
 
 const UserContext = createContext();
 
@@ -39,7 +37,7 @@ export const UserProvider = ({ children }) => {
     }
   }, [token]);
 
-  // Login automático ao recarregar (se Firebase estiver autenticado)
+  // Login automatico ao recarregar (se Firebase estiver autenticado)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (
@@ -70,7 +68,7 @@ export const UserProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Função de login
+  // Funcao de login
   const login = ({ token, user }) => {
     setToken(token);
     setUser(user);
@@ -78,7 +76,7 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  // Função de logout
+  // Funcao de logout
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -93,7 +91,7 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-// Função auxiliar para buscar dados do Firestore
+// Funcao auxiliar para buscar dados do Firestore
 export const getUserData = async () => {
   const uid = auth?.currentUser?.uid;
   if (!uid) return null;

@@ -11,10 +11,8 @@ import {
   addPautaToEspelho,
   updateProgramaDuracao,
   createEspelho,
-} from "../../../firebase";
+} from "../../../firebaseClient";
 import { LoadingOverlay } from "../LoadingOverlay";
-import { SortablePautaCard } from "../pautas/SortablePautaCard";
-import { AdicionarPautaModal } from "../pautas/AdicionarPautaModal";
 import {
   FileText,
   Plus,
@@ -45,6 +43,8 @@ import {
   formatSegundos,
 } from "@/lib/utils";
 import UserContext from "@/context/UserContext";
+import { SortablePautaCard } from "../Pautas/SortablePautaCard";
+import { AdicionarPautaModal } from "../Pautas/AdicionarPautaModal";
 
 export function ProgramaDetailPage() {
   const { id: programaId } = useParams();
@@ -120,9 +120,6 @@ export function ProgramaDetailPage() {
 
       // Se houver diferença, atualiza o banco silenciosamente
       if (totalReal !== totalNoBanco) {
-        console.log(
-          `Sincronizando duração: Banco(${totalNoBanco}) vs Real(${totalReal})`
-        );
         updateProgramaDuracao(programa.id, totalReal).then(() => {
           // Atualiza o estado local para refletir a mudança sem precisar recarregar
           setPrograma((prev) => ({ ...prev, duracaoTotalSegundos: totalReal }));
@@ -249,18 +246,20 @@ export function ProgramaDetailPage() {
             <p className="text-muted-foreground mb-4">
               Este programa ainda não possui um espelho
             </p>
-            <Button
-              onClick={handleCreateEspelho}
-              disabled={isCreatingEspelho}
-              className="gap-2"
-            >
-              {isCreatingEspelho ? (
-                <Save className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              {isCreatingEspelho ? "Criando..." : "Criar Espelho"}
-            </Button>
+            {user?.typeUser !== "Visualizador" && (
+              <Button
+                onClick={handleCreateEspelho}
+                disabled={isCreatingEspelho}
+                className="gap-2"
+              >
+                {isCreatingEspelho ? (
+                  <Save className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {isCreatingEspelho ? "Criando..." : "Criar Espelho"}
+              </Button>
+            )}
           </div>
         </Card>
       </div>
@@ -320,44 +319,46 @@ export function ProgramaDetailPage() {
             </div>
 
             {/* Botões de Ação */}
-            <div className="flex gap-2 items-center shrink-0">
-              {/* Botão de "Salvando..." (só aparece quando está salvando) */}
-              {isSaving && (
+            {user?.typeUser !== "Visualizador" && (
+              <div className="flex gap-2 items-center shrink-0">
+                {/* Botão de "Salvando..." (só aparece quando está salvando) */}
+                {isSaving && (
+                  <Button
+                    variant="outline"
+                    disabled
+                    className="gap-2 cursor-wait"
+                  >
+                    <Save className="h-4 w-4 animate-spin" />
+                    Salvando...
+                  </Button>
+                )}
+                {/* Botão de Adicionar */}
+                <Button
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 text-white" />
+                  <span className="font-semibold">Vincular Pauta</span>
+                </Button>
+                {/* Botão de Cadastrar */}
                 <Button
                   variant="outline"
-                  disabled
-                  className="gap-2 cursor-wait"
+                  onClick={() =>
+                    navigate("/home/pautas/create", {
+                      state: {
+                        espelhoId: espelho?.id,
+                        programaNome: programa?.nome,
+                      },
+                    })
+                  }
+                  className="gap-2 bg-white hover:text-blue-700 px-2 text-base text-blue-600"
                 >
-                  <Save className="h-4 w-4 animate-spin" />
-                  Salvando...
-                </Button>
-              )}
-              {/* Botão de Adicionar */}
-              <Button
-                className="gap-2 bg-blue-600 hover:bg-blue-700 px-2 text-base text-white"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Plus className="h-4 w-4 text-white" />
-                <span className="font-semibold">Vincular Pauta</span>
-              </Button>
-              {/* Botão de Cadastrar */}
-              <Button
-                variant="outline"
-                onClick={() =>
-                  navigate("/home/pautas/create", {
-                    state: {
-                      espelhoId: espelho?.id,
-                      programaNome: programa?.nome,
-                    },
-                  })
-                }
-                className="gap-2 bg-white hover:text-blue-700 px-2 text-base text-blue-600"
-              >
-                <Plus className="h-4 w-4 text-blue-600" />
+                  <Plus className="h-4 w-4 text-blue-600" />
 
-                <span className="font-semibold">Cadastrar Pauta</span>
-              </Button>
-            </div>
+                  <span className="font-semibold">Cadastrar Pauta</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           <p className="text-muted-foreground">

@@ -1,7 +1,6 @@
 // /src/components/Card/ScriptForm.jsx
 
 import { useState, useEffect, useContext } from "react";
-import { createPauta, enviarNotificacaoCriacao } from "../../../firebase";
 import { BasicInfoCard } from "./BasicInfoCard";
 import { toast } from "sonner";
 import { Save, ArrowLeft } from "lucide-react";
@@ -9,6 +8,11 @@ import UserContext from "@/context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { useUserCache } from "@/context/UserCacheContext";
 import { Button } from "../ui/button";
+import {
+  createPauta,
+  notificarCriacaoPauta,
+  emailCriacaoPauta,
+} from "../../../firebaseClient";
 
 const initialState = {
   produtorId: "",
@@ -30,7 +34,7 @@ const initialState = {
 };
 
 export function ScriptForm({ onCancel, initialData, mode = "create" }) {
-  const { user: user } = useContext(UserContext);
+  const { user } = useContext(UserContext);
   const { getUserById, isLoadingCache } = useUserCache();
   const [formData, setFormData] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +68,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
   // useEffect para carregar cidades do IBGE
   useEffect(() => {
     fetch(
-      "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios"
+      "https://servicodados.ibge.gov.br/api/v1/localidades/estados/21/municipios",
     )
       .then((res) => res.json())
       .then((data) => {
@@ -84,7 +88,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
     if (dataInicio && formData.dataExibicao) {
       if (formData.dataExibicao < dataInicio) {
         setDateValidationError(
-          "A data de exibição não pode ser anterior à data de gravação."
+          "A data de exibição não pode ser anterior à data de gravação.",
         );
       } else {
         setDateValidationError("");
@@ -119,6 +123,18 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
     });
   };
 
+  // Função para pegar IDs de envolvidos na Pauta
+  const getInvolvedUserIds = (data) => {
+    const ids = [
+      data.produtorId,
+      data.apresentadorId,
+      data.roteiristaId,
+      //user.uid, // Descomentar se  quem criou também receba a notificação
+    ];
+    // Filtra IDs vazios/nulos e remove duplicatas
+    return [...new Set(ids.filter((id) => id))];
+  };
+
   // Handler de envio do formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -130,7 +146,7 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
       return;
     }
     if (!user) {
-      toast.error("Você não está autenticado."), { duration: 1500 };
+      (toast.error("Você não está autenticado."), { duration: 1500 });
       return;
     }
 
@@ -154,43 +170,50 @@ export function ScriptForm({ onCancel, initialData, mode = "create" }) {
       roteiroId: null,
     };
 
+    // Pega o nome do usuário atual para a notificação
+    const userName = user.display_name || user.email || "Usuário";
+    const userIdsParaNotificar = getInvolvedUserIds(pautaData);
+
     try {
       const newPautaId = await createPauta(pautaData, user.uid);
       if (!newPautaId) {
         throw new Error("Falha ao criar o documento da pauta.");
       }
 
+      const pautaCompleta = { id: newPautaId, ...pautaData };
+
+      //função para criar notificacao
+      notificarCriacaoPauta(pautaCompleta, userIdsParaNotificar, userName);
+
       if (!isLoadingCache) {
         // Envia para o Produtor
         const produtor = getUserById(pautaData.produtorId);
         if (produtor?.email) {
-          enviarNotificacaoCriacao(
+          emailCriacaoPauta(
             produtor.email,
             pautaData.titulo,
             newPautaId,
-            "Produtor"
+            "Produtor",
           );
         }
-
         // Envia para o Apresentador
         const apresentador = getUserById(pautaData.apresentadorId);
         if (apresentador?.email) {
-          enviarNotificacaoCriacao(
+          emailCriacaoPauta(
             apresentador.email,
             pautaData.titulo,
             newPautaId,
-            "Apresentador"
+            "Apresentador",
           );
         }
-
         // Envia para o Roteirista
         const roteirista = getUserById(pautaData.roteiristaId);
         if (roteirista?.email) {
-          enviarNotificacaoCriacao(
+          emailCriacaoPauta(
             roteirista.email,
             pautaData.titulo,
             newPautaId,
-            "Roteirista"
+            "Roteirista",
           );
         }
       }

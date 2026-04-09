@@ -1,8 +1,8 @@
 // src/components/PrivateRoute.jsx
 import { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import UserContext from "../context/UserContext";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import UserContext from "@/context/UserContext";
 
 export function PrivateRoute({ children }) {
   const { token, isLoading } = useContext(UserContext);

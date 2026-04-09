@@ -2,7 +2,7 @@
 
 import { createContext, useState, useEffect, useContext } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../../firebaseClient";
 
 const UserCacheContext = createContext();
 

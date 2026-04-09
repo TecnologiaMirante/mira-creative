@@ -1,13 +1,11 @@
 // /components/chat/AiChat.jsx
-"use client";
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Send, Bot, ShieldAlert, ArrowDown } from "lucide-react";
 import { httpsCallable } from "firebase/functions";
-import { functions, auth } from "../../../firebase"; // Ajuste o caminho conforme sua estrutura
+import { functions, auth } from "../../../firebaseClient"; // Ajuste o caminho conforme sua estrutura
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import {
